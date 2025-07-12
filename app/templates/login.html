@@ -5,23 +5,40 @@
     <title>登录页面</title>
     <style>
         /* 登录页面整体样式 */
+
         body {
             font-family: Arial, sans-serif;
             background-color: #f4f4f9;
             display: flex;
-            justify-content: center;
+            flex-direction: column;
+            justify-content: flex-start;
             align-items: center;
             height: 100vh;
             margin: 0;
         }
 
         /* 登录框容器样式 */
+
+        /* 登录logo图片样式 */
+        .login-logo {
+            margin-top: 48px;
+            margin-bottom: 24px;
+            display: block;
+            width: 180px;
+            /* 原120px，增大50% */
+            max-width: 60vw;
+            height: auto;
+            image-rendering: auto;
+        }
+
         .login-container {
             background: white;
             padding: 30px;
             border-radius: 8px;
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
             width: 300px;
+            margin-top: 60px;
+            /* 下移，保证与logo有间距 */
         }
 
         h2 {
@@ -93,6 +110,8 @@
 </head>
 
 <body>
+    <!-- 登录logo图片 -->
+    <img src="/static/logo.png" alt="睿玩智库LOGO" class="login-logo">
     <!-- 登录框主体 -->
     <div class="login-container">
         <h2>系统登录</h2>
