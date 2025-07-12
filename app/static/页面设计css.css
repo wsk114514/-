@@ -22,7 +22,7 @@
     color: #bdbdbd;
     font-size: 1.5em;
     cursor: pointer;
-    transition: background 0.2s, color 0.2s;
+    transition: background 0.2, color 0.2;
 }
 .recent-chat-btn:hover {
     background: #4f5ef6;
