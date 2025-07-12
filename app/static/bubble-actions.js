@@ -1,7 +1,7 @@
-// bubble-actions.js
-// 悬停气泡时显示操作按钮，并实现复制功能
+// bubble-actions.js 气泡操作工具栏模块
+// 悬停气泡时显示操作按钮，并实现复制等功能
 
-// 工具栏按钮HTML
+// 工具栏按钮 HTML 结构
 const toolbarHTML = `
   <div class="bubble-toolbar" style="display:none; position:absolute; bottom:-48px; left:50%; transform:translateX(-50%); z-index:10;">
     <button class="bubble-btn copy">复制</button>
@@ -11,12 +11,14 @@ const toolbarHTML = `
   </div>
 `;
 
-// 给所有气泡绑定悬停事件
+/**
+ * 为所有 AI 气泡添加工具栏，并实现复制功能
+ */
 function addBubbleToolbar() {
   const chatArea = document.querySelector(".chat-area");
   if (!chatArea) return;
 
-  // 只为AI气泡添加工具栏
+  // 初始为所有 AI 气泡添加工具栏
   chatArea.querySelectorAll(".chat-bubble.ai").forEach((bubble) => {
     if (!bubble.querySelector(".bubble-toolbar")) {
       bubble.style.position = "relative";
@@ -25,7 +27,7 @@ function addBubbleToolbar() {
     }
   });
 
-  // 监听新气泡的添加（仅AI气泡）
+  // 监听新气泡的添加（仅 AI 气泡），自动添加工具栏
   const observer = new MutationObserver((mutations) => {
     mutations.forEach((mutation) => {
       mutation.addedNodes.forEach((node) => {
@@ -50,7 +52,7 @@ function addBubbleToolbar() {
     if (e.target.classList.contains("copy")) {
       const bubble = e.target.closest(".chat-bubble");
       if (bubble) {
-        // 复制气泡文本
+        // 复制气泡文本到剪贴板
         const text = bubble.childNodes[0].nodeValue || bubble.textContent;
         navigator.clipboard.writeText(text.trim()).then(() => {
           e.target.textContent = "已复制";
@@ -60,10 +62,9 @@ function addBubbleToolbar() {
         });
       }
     }
-    // 其他按钮可在此扩展
+    // 其他按钮功能可在此扩展
   });
 }
 
-window.addEventListener("DOMContentLoaded", addBubbleToolbar);
-// 页面加载后自动绑定
+// 页面加载后自动绑定工具栏
 window.addEventListener("DOMContentLoaded", addBubbleToolbar);

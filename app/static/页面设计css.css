@@ -1,4 +1,10 @@
-/* 最近聊天记录按钮区样式 输入测试来测试 */
+
+/*
+页面设计css.css
+本文件包含所有页面样式，并配有详细注释，便于理解每个部分的作用。
+*/
+
+/* 最近聊天记录按钮区样式 */
 .recent-chats {
     display: flex;
     flex-direction: column;
@@ -22,7 +28,8 @@
     background: #4f5ef6;
     color: #fff;
 }
-/* 气泡操作按钮工具栏样式 */
+
+/* 气泡操作按钮工具栏样式（用于 AI 气泡下方的操作按钮） */
 .bubble-toolbar {
     display: flex;
     gap: 8px;
