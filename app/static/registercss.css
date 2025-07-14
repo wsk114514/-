@@ -6,25 +6,30 @@
     min-width: 360px;
     max-width: 400px;
     width: 100%;
-    background: rgba(255,255,255,0.95);
+    background: rgba(255,255,255,0.46); /* 再降低30%透明度 */
     border-radius: 18px;
     box-shadow: 0 6px 32px rgba(0,0,0,0.10);
     padding: 36px 32px 28px 32px;
 }
 
+html, body {
+    height: 100vh;
+    margin: 0;
+    padding: 0;
+}
+
 body {
-    /* 渐变背景，页面居中显示 */
-    background: linear-gradient(135deg, #e0eafc 0%, #cfdef3 100%);
-    min-height: 100vh;
+    /* 页面居中显示，字体设置 */
     display: flex;
     align-items: center;
     justify-content: center;
     font-family: 'Segoe UI', 'Microsoft YaHei', Arial, sans-serif; /* 优先中文字体 */
+    /* 背景由JS动态设置 */
 }
 
 form {
-    /* 白色卡片容器，圆角和阴影 */
-    background: #fff;
+    /* 半透明白色卡片容器，圆角和阴影 */
+    background: rgba(255,255,255,0.46);
     padding: 32px 40px;
     border-radius: 16px;
     box-shadow: 0 4px 24px rgba(0,0,0,0.10);
@@ -39,6 +44,7 @@ h2 {
     text-align: center;
     color: #3a3a3a;
     margin-bottom: 18px;
+    font-size: 2.2em;
 }
 
 label {
@@ -103,4 +109,10 @@ a {
 a:hover {
     /* 链接悬停下划线 */
     text-decoration: underline;
+}
+
+form label:first-of-type {
+    background: rgba(255,255,255,0.25); /* 更低透明度 */
+    border-radius: 8px;
+    padding: 8px 0 8px 8px;
 }

@@ -1,15 +1,21 @@
 
     /* 登录页面整体样式 */
 
+        html, body {
+            height: 100vh;
+            margin: 0;
+            padding: 0;
+        }
+
         body {
             font-family: Arial, sans-serif;
-            background-color: #f4f4f9;
             display: flex;
             flex-direction: column;
             justify-content: flex-start;
             align-items: center;
             height: 100vh;
             margin: 0;
+            /* 移除背景色，背景由JS动态设置 */
         }
 
         /* 登录框容器样式 */
@@ -27,7 +33,7 @@
         }
 
         .login-container {
-            background: white;
+            background: rgba(255,255,255,0.46);
             padding: 30px;
             border-radius: 8px;
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
