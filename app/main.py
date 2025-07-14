@@ -166,6 +166,44 @@ async def chat(req: ChatRequest):
     chain = app.state.llm  # 获取 ConversationChain 实例
     response = get_response(message, chain)
     return {"response": response}
+@app.get("/register", response_class=HTMLResponse)
+async def register_page(request: Request):
+    """
+    显示注册页面。
+    """
+    return templates.TemplateResponse("register.html", {"request": request})
+@app.post("/register")
+async def register_submit(
+    request: Request,
+    username: str = Form(...),
+    password: str = Form(...)
+):
+    """
+    处理注册请求。
+    """
+    # 检查用户名和密码是否为空
+    if not username or not password:
+        return templates.TemplateResponse(
+            "register.html",
+            {"request": request, "error": "用户名和密码不能为空"},
+            status_code=400
+        )
+    if username in fake_users_db:
+        return templates.TemplateResponse(
+            "register.html",
+            {"request": request, "error": "用户名已存在"},
+            status_code=400
+        )
+    # 创建新用户
+    hashed_password = pwd_context.hash(password)
+    fake_users_db[username] = {
+        "username": username,
+        "hashed_password": hashed_password
+    }
+    # 注册成功，重定向到登录页
+    response= RedirectResponse(url="/", status_code=status.HTTP_303_SEE_OTHER)
+    return response
+
 
 # 挂载静态文件目录
 app.mount("/static", StaticFiles(directory=os.path.join(BASE_DIR, "static")), name="static")
