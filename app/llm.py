@@ -5,6 +5,7 @@ from langchain.prompts import PromptTemplate
 from langchain_community.chat_models import ChatTongyi
 import os
 
+#初始化llm
 def init_llm():
     API_KEY=os.getenv("DASHSCOPE_API_KEY")
     llm=ChatTongyi(
@@ -13,10 +14,12 @@ def init_llm():
     )
     return llm
 
+#初始化记忆
 def init_memory():
     memory=ConversationBufferMemory()
     return memory
 
+#初始化系统
 def init_system():
     llm=init_llm()
     memory=init_memory()
@@ -42,6 +45,7 @@ AI助手:"""
     )
     return chain
 
+#获得回复
 def get_response(message:str,chain:ConversationChain,function:str)->str:
     # 清除之前的对话历史
     chain.memory.clear()
