@@ -134,6 +134,7 @@ async def app_page(request: Request, user: str = Depends(get_current_user)):
             "now": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         }
     )
+   
 
 @app.get("/logout")
 async def logout(request: Request):
@@ -154,6 +155,7 @@ class ChatRequest(BaseModel):
     聊天请求模型，包含 message 字段。
     """
     message: str
+    function: str
 
 @app.post("/app")
 async def chat(req: ChatRequest):
@@ -161,10 +163,11 @@ async def chat(req: ChatRequest):
     处理聊天请求，调用 LLM 获取回复。
     """
     message = req.message.strip()
+    function = req.function
     if not message:
         raise HTTPException(status_code=400, detail="消息不能为空")
     chain = app.state.llm  # 获取 ConversationChain 实例
-    response = get_response(message, chain)
+    response = get_response(message, chain,function)
     return {"response": response}
 @app.get("/register", response_class=HTMLResponse)
 async def register_page(request: Request):

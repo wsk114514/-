@@ -1,25 +1,51 @@
 // nav-chat-clear.js 导航区点击清空聊天区模块
-// 功能：点击左侧导航区任意按钮后，清空聊天区，显示对应文字的AI气泡
+import { currentFunctionType } from './shared.js';
 
 const menuItems = document.querySelectorAll(".menu-item"); // 所有导航菜单项
 const chatArea = document.querySelector(".chat-area"); // 聊天显示区
+const chatInput = document.querySelector(".chat-input"); // 输入框
 
 // 为每个导航菜单项绑定点击事件
 menuItems.forEach((item) => {
-  item.addEventListener("click", function (e) {
+  item.addEventListener("click", async function (e) {
     e.preventDefault();
+    
+    // 获取当前点击的功能类型
+    const buttonText = item.innerText.replace(/\s+/g, " ").trim();
+    
+    // 更新当前功能类型
+    if (buttonText === "今天玩点什么好？") {
+      window.currentFunctionType = "play";
+    } else if (buttonText === "攻略询问") {
+      window.currentFunctionType = "game_guide";
+    } else if (buttonText === "文档检索问答") {
+      window.currentFunctionType = "doc_qa";
+    } else if (buttonText === "游戏百科") {
+      window.currentFunctionType = "game_wiki";
+    } else {
+      window.currentFunctionType = "general";
+    }
+    
     // 清空聊天区内容
     chatArea.innerHTML = "";
+    
     // 创建第一个AI气泡，显示按钮文字
     const aiBubble1 = document.createElement("div");
     aiBubble1.className = "chat-bubble ai";
-    aiBubble1.textContent = item.innerText.replace(/\s+/g, " ");
+    aiBubble1.textContent = buttonText;
     chatArea.appendChild(aiBubble1);
-    // 创建第二个AI气泡，提示用户输入问题
-    const aiBubble2 = document.createElement("div");
-    aiBubble2.className = "chat-bubble ai";
-    aiBubble2.textContent = "请输入您的问题与要求🎮";
-    chatArea.appendChild(aiBubble2);
+    
+    // 发送一个初始消息来获取新功能的欢迎语
+    try {
+        const aiReply = await getResponse("你好！", window.currentFunctionType);
+        const aiBubble2 = document.createElement("div");
+        aiBubble2.className = "chat-bubble ai";
+        aiBubble2.textContent = aiReply;
+        chatArea.appendChild(aiBubble2);
+    } catch (error) {
+        console.error("Error:", error);
+    }
+    
     chatArea.scrollTop = chatArea.scrollHeight; // 滚动到底部
   });
 });
