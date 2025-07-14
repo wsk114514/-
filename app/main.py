@@ -169,7 +169,7 @@ async def chat(req: ChatRequest):
 
 # 挂载静态文件目录
 app.mount("/static", StaticFiles(directory=os.path.join(BASE_DIR, "static")), name="static")
-
+#测试测试测试
 # 作为主程序运行时，启动 uvicorn 服务
 if __name__ == "__main__":
     import uvicorn
