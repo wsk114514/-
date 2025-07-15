@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>睿玩智库——今天想要玩什么？</title>
+    <!-- 引入外部CSS文件，包含所有页面样式和注释 -->
+    <link rel="stylesheet" href="/static/页面设计css.css">
+</head>
+
+<body>
+
+    <!-- 页面主体结构，分为侧边栏和主内容区 -->
+    <div class="container">
+        <!-- 左侧导航栏 -->
+        <aside class="sidebar">
+            <div class="logo">睿玩智库</div> <!-- Logo区 -->
+            <nav class="menu"> <!-- 导航菜单区 -->
+                <a href="/play" class="menu-item" data-url="/play" data-function="play">今天<br>玩点什么好？</a> <!-- 推荐玩法 -->
+                <a href="/game_guide" class="menu-item" data-url="/game_guide"data-function="game_guide">攻略询问</a> <!-- 攻略问答 -->
+                <a href="/doc_qa" class="menu-item" data-url="doc_qa" data-function="doc_qa">文档检索问答</a> <!-- 文档检索 -->
+                <a href="/game_wiki" class="menu-item" data-url="game_wiki" data-function="game_wiki">游戏百科</a> <!-- 游戏百科 -->
+            </nav>
+            <!-- 最近三轮聊天记录按钮区（可扩展为历史对话） -->
+            <div class="recent-chats">
+                <button class="recent-chat-btn">最近聊天1</button>
+                <button class="recent-chat-btn">最近聊天2</button>
+                <button class="recent-chat-btn">最近聊天3</button>
+            </div>
+        </aside>
+        <!-- 右侧主内容区 -->
+        <main class="main-content">
+            <!-- 聊天内容区域，所有对话气泡都显示在这里 -->
+            <div class="chat-area">
+                <div class="chat-bubble ai">{{welcome_messages}}</div>
+            </div>
+            <!-- 底部输入栏，包含输入框和操作按钮 -->
+            <div class="input-bar">
+                <input type="text" class="chat-input" placeholder="请输入内容..."> <!-- 用户输入框 -->
+                <button class="send-btn">上传文件</button> <!-- 文件上传按钮（预留） -->
+                <button class="send-btn">发送</button> <!-- 发送消息按钮 -->
+            </div>
+        </main>
+    </div>
+    <!-- 引入主 JS 文件，统一管理所有页面逻辑 -->
+    <script type="module" src="/static/main.js"></script>
+    <script>
+        currentFunctionType = "{{ function_type }}"; // 设置当前功能类型
+    </script>
+</body>
+
+</html>
