@@ -12,12 +12,12 @@ menuItems.forEach((item) => {
     e.preventDefault();
     
     // 获取当前点击的功能类型
-    const buttonText = item.innerText.replace(/\s+/g, " ").trim();
-    const functionType=item.getAttribute('data-function');
+    let buttonText = item.innerText.replace(/\s+/g, " ").trim();
+    let functionType=item.getAttribute('data-function');
 
-    const url=item.getAttribute('data-url');
+    let url=item.getAttribute('data-url');
     if (url) {
-      const newurl= `${url}?function=${functionType}`;
+      let newurl= `${url}?function=${functionType}`;
       window.location.href = newurl  ; // 如果有链接，跳转到对应页面
     }
     // 清空聊天区内容

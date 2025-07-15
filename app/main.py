@@ -143,7 +143,7 @@ async def app_page(request: Request, user: str = Depends(get_current_user)):
             "username": user,
             "now": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
             "function_type": function_type,
-            "welcome_message": welcome_message
+            "welcome_messages": welcome_messages["general"]
         }
     )
    
@@ -196,7 +196,7 @@ async def play_page(request: Request, user: str = Depends(get_current_user)):
             "username": user,
             "now": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
             "function_type": function_type,
-            "welcome_message": welcome_messages["play"]
+            "welcome_messages": welcome_messages["play"]
         }
     )
 # 新增路由处理
@@ -215,7 +215,7 @@ async def game_guide_page(request: Request, user: str = Depends(get_current_user
             "username": user,
             "now": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
             "function_type": function_type,
-            "welcome_message": welcome_messages["game_guide"]
+            "welcome_messages": welcome_messages["game_guide"]
         }
     )
 
@@ -234,7 +234,7 @@ async def doc_qa_page(request: Request, user: str = Depends(get_current_user)):
             "username": user,
             "now": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
             "function_type": function_type,
-            "welcome_message": welcome_messages["doc_qa"]
+            "welcome_messages": welcome_messages["doc_qa"]
         }
     )
 
@@ -253,7 +253,7 @@ async def game_wiki_page(request: Request, user: str = Depends(get_current_user)
             "username": user,
             "now": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
             "function_type": function_type,
-            "welcome_message": welcome_messages["game_wiki"]
+            "welcome_messages": welcome_messages["game_wiki"]
         }
     )
 @app.get("/register", response_class=HTMLResponse)

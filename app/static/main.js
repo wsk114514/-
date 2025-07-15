@@ -2,7 +2,6 @@
 // 设置默认的功能类型
 
 import { currentFunctionType } from './shared.js';
-currentFunctionType = "general";
 
 // 按顺序导入所有模块
 import "./chat.js";
