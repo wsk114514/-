@@ -82,6 +82,9 @@ body {
 .container {
     display: flex;
     height: 100vh;
+    width: 100vw; /* 添加宽度全屏设置 */
+    margin: 0; /* 移除默认外边距 */
+    padding: 0; /* 移除默认内边距 */
 }
 
 /* 左侧导航栏样式 */
@@ -92,6 +95,9 @@ body {
     flex-direction: column;
     padding: 24px 0;
     box-shadow: 2px 0 8px rgba(0, 0, 0, 0.08);
+    position: relative;
+    z-index: 10; /* 确保导航栏在背景图之上 */
+    height: 100vh; /* 强制占满视口高度 */
 }
 
 /* Logo样式 */
