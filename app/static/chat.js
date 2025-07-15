@@ -1,6 +1,6 @@
 // chat.js 聊天输入与消息处理模块
 // 让用户输入内容后点击“发送”按钮或回车，消息显示在聊天区域
-
+import { currentFunctionType } from "./shared.js";
 // 获取相关 DOM 元素
 const chatInput = document.querySelector(".chat-input"); // 输入框
 const chatArea = document.querySelector(".chat-area"); // 聊天显示区
@@ -13,7 +13,7 @@ async function sendMessage() {
   const message = chatInput.value.trim();
   if (message) {
     // 获取当前的功能类型
-    const functionType = window.currentFunctionType || "general";
+    const functionType = currentFunctionType || "general";
     
     // 创建用户气泡并显示
     const userBubble = document.createElement("div");

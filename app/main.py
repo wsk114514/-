@@ -32,6 +32,14 @@ pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 # 会话管理 - 存储已登录用户的会话令牌
 active_sessions = {}
 
+welcome_messages = {
+    "play": "您好，我是睿玩智库的游戏推荐助手！告诉我您的喜好，我来推荐适合的游戏吧！",
+    "game_guide": "您好，我是睿玩智库的攻略助手！有什么游戏难题尽管问我！",
+    "doc_qa": "您好，我是睿玩智库的文档检索助手！请上传文档或直接提问！",
+    "game_wiki": "您好，我是睿玩智库的游戏百科助手！想了解哪款游戏的历史或设定？",
+    "general": "您好！我是睿玩智库的通用聊天助手！有什么可以帮到您？"
+
+}
 # 模拟用户数据库，仅包含一个 admin 用户
 fake_users_db = {
     "admin": {
@@ -126,12 +134,16 @@ async def app_page(request: Request, user: str = Depends(get_current_user)):
     if isinstance(user, RedirectResponse):
         return user
     # 用户已登录，显示应用页面
+    function_type=request.query_params.get("function", "general")
+    welcome_message= welcome_messages.get(function_type, welcome_messages["general"])
     return templates.TemplateResponse(
         "页面主体.html",
         {
             "request": request,
             "username": user,
-            "now": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            "now": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            "function_type": function_type,
+            "welcome_message": welcome_message
         }
     )
    
@@ -169,6 +181,81 @@ async def chat(req: ChatRequest):
     chain = app.state.llm  # 获取 ConversationChain 实例
     response = get_response(message, chain,function)
     return {"response": response}
+@app.get("/play", response_class=HTMLResponse)
+async def play_page(request: Request, user: str = Depends(get_current_user)):
+    """
+    显示游戏推荐页面。
+    """
+    if isinstance(user, RedirectResponse):
+        return user
+    function_type = request.query_params.get("function", "play")
+    return templates.TemplateResponse(
+        "页面主体.html",
+        {
+            "request": request,
+            "username": user,
+            "now": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            "function_type": function_type,
+            "welcome_message": welcome_messages["play"]
+        }
+    )
+# 新增路由处理
+@app.get("/game_guide", response_class=HTMLResponse)
+async def game_guide_page(request: Request, user: str = Depends(get_current_user)):
+    """
+    显示游戏攻略页面.
+    """
+    if isinstance(user, RedirectResponse):
+        return user
+    function_type = request.query_params.get("function", "game_guide")
+    return templates.TemplateResponse(
+        "页面主体.html",
+        {
+            "request": request,
+            "username": user,
+            "now": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            "function_type": function_type,
+            "welcome_message": welcome_messages["game_guide"]
+        }
+    )
+
+@app.get("/doc_qa", response_class=HTMLResponse)
+async def doc_qa_page(request: Request, user: str = Depends(get_current_user)):
+    """
+      显示文档问答页面。
+    """
+    if isinstance(user, RedirectResponse):
+        return user
+    function_type = request.query_params.get("function", "doc_qa")
+    return templates.TemplateResponse(
+        "页面主体.html",
+        {
+            "request": request,
+            "username": user,
+            "now": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            "function_type": function_type,
+            "welcome_message": welcome_messages["doc_qa"]
+        }
+    )
+
+@app.get("/game_wiki", response_class=HTMLResponse)
+async def game_wiki_page(request: Request, user: str = Depends(get_current_user)):
+    """
+    显示游戏百科页面。
+    """
+    if isinstance(user, RedirectResponse):
+        return user
+    function_type = request.query_params.get("function", "game_wiki")
+    return templates.TemplateResponse(
+        "页面主体.html",
+        {
+            "request": request,
+            "username": user,
+            "now": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            "function_type": function_type,
+            "welcome_message": welcome_messages["game_wiki"]
+        }
+    )
 @app.get("/register", response_class=HTMLResponse)
 async def register_page(request: Request):
     """

@@ -17,10 +17,10 @@
         <aside class="sidebar">
             <div class="logo">睿玩智库</div> <!-- Logo区 -->
             <nav class="menu"> <!-- 导航菜单区 -->
-                <a href="#" class="menu-item">今天<br>玩点什么好？</a> <!-- 推荐玩法 -->
-                <a href="#" class="menu-item">攻略询问</a> <!-- 攻略问答 -->
-                <a href="#" class="menu-item">文档检索问答</a> <!-- 文档检索 -->
-                <a href="#" class="menu-item">游戏百科</a> <!-- 游戏百科 -->
+                <a href="/play" class="menu-item" data-url="/play" data-function="play">今天<br>玩点什么好？</a> <!-- 推荐玩法 -->
+                <a href="/game_guide" class="menu-item" data-url="/game_guide"data-function="game_guide">攻略询问</a> <!-- 攻略问答 -->
+                <a href="/doc_qa" class="menu-item" data-url="doc_qa" data-function="doc_qa">文档检索问答</a> <!-- 文档检索 -->
+                <a href="/game_wiki" class="menu-item" data-url="game_wiki" data-function="game_wiki">游戏百科</a> <!-- 游戏百科 -->
             </nav>
             <!-- 最近三轮聊天记录按钮区（可扩展为历史对话） -->
             <div class="recent-chats">
@@ -33,7 +33,7 @@
         <main class="main-content">
             <!-- 聊天内容区域，所有对话气泡都显示在这里 -->
             <div class="chat-area">
-                <div class="chat-bubble ai">您好！我是睿玩智库！有什么可以帮到您？</div>
+                <div class="chat-bubble ai">{{welcome_messages}}</div>
             </div>
             <!-- 底部输入栏，包含输入框和操作按钮 -->
             <div class="input-bar">
@@ -45,6 +45,9 @@
     </div>
     <!-- 引入主 JS 文件，统一管理所有页面逻辑 -->
     <script type="module" src="/static/main.js"></script>
+    <script>
+        window.currentFunctionType = "{{ function_type }}"; // 设置当前功能类型
+    </script>
 </body>
 
 </html>
