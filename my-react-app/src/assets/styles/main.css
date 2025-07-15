@@ -1,0 +1,17 @@
+/* 复制原有CSS内容并修改图片引用路径 */
+/* 将background1.png改为@assets/background1.png */
+
+/* 气泡操作按钮工具栏样式 */
+.bubble-toolbar {
+  display: flex;
+  gap: 8px;
+  position: absolute;
+  bottom: -20px;
+  left: 0;
+  padding-left: 10px;
+  box-sizing: border-box;
+  width: 100%;
+  z-index: 10;
+}
+
+/* 其他原有CSS样式... */
