@@ -27,8 +27,9 @@ const Login = () => {
         headers: {'Content-Type': 'application/json'},
         body: JSON.stringify({ username, password })
       });
-      if (!response.ok) throw new Error('登录失败');
-      navigate('/chat');
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || '登录失败');
+      navigate('/chat'); // 将'/'改为'/chat'
     } catch (err) {
       setError(err.message);
     }
@@ -38,7 +39,7 @@ const Login = () => {
     <div className="login-page">
       <img src="/logo.png" alt="睿玩智库LOGO" className="login-logo" />
       <div className="login-container">
-        <h2>系统登录</h2>
+        <h2>用户登录</h2>
         {error && <div className="error-message">{error}</div>}
         <form onSubmit={handleSubmit}>
           <div className="form-group">
@@ -49,7 +50,6 @@ const Login = () => {
               value={username}
               onChange={(e) => setUsername(e.target.value)}
               required
-              autoFocus
             />
           </div>
           <div className="form-group">

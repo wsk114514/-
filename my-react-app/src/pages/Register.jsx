@@ -25,7 +25,8 @@ const Register = () => {
         headers: {'Content-Type': 'application/json'},
         body: JSON.stringify({ username, password })
       });
-      if (!response.ok) throw new Error('注册失败');
+      const data = await response.json(); // 添加这行解析错误信息
+      if (!response.ok) throw new Error(data.error || '注册失败');
       navigate('/');
     } catch (err) {
       setError(err.message);

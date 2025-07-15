@@ -1,4 +1,3 @@
-// 只保留一组导入语句
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 
@@ -13,9 +12,9 @@ export default defineConfig({
     port: 3000,
     open: true,
     proxy: {
-      '/login': 'http://localhost:5000',
-      '/register': 'http://localhost:5000',
-      '/app': 'http://localhost:5000'
+      '/login': 'http://localhost:8000',
+      '/register': 'http://localhost:8000',
+      '/app': 'http://localhost:8000'
     }
   }
 });

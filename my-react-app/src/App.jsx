@@ -7,6 +7,7 @@ import './assets/styles/main.css';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Login from './pages/Login';
 import Register from './pages/Register';
+import Chat from './pages/Chat'; // 添加Chat组件导入
 
 
 
@@ -16,7 +17,7 @@ function App() {
       <Routes>
         <Route path="/" element={<Login />} />
         <Route path="/register" element={<Register />} />
-        
+        <Route path="/chat" element={<Chat />} /> {/* 添加chat路由 */}
       </Routes>
     </Router>
   );

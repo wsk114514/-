@@ -1,110 +1,128 @@
 
-    /* 登录页面整体样式 */
+/* 在文件顶部添加以下样式 */
+.login-page {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  min-height: 100vh;
+  width: 100%;
+}
 
-        html, body {
-            height: 100vh;
-            margin: 0;
-            padding: 0;
-        }
+/* 登录页面整体样式 */
+html, body {
+  height: 100vh;
+  margin: 0;
+  padding: 0;
+}
 
-        body {
-            font-family: Arial, sans-serif;
-            display: flex;
-            flex-direction: column;
-            justify-content: flex-start;
-            align-items: center;
-            height: 100vh;
-            margin: 0;
-            /* 移除背景色，背景由JS动态设置 */
-        }
+body {
+  font-family: Arial, sans-serif;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: center;
+  height: 100vh;
+  margin: 0;
+  
+  /* 移除背景色，背景由JS动态设置 */
+}
 
-        /* 登录框容器样式 */
+/* 登录框容器样式 */
 
-        /* 登录logo图片样式 */
-        .login-logo {
-            margin-top: 48px;
-            margin-bottom: 24px;
-            display: block;
-            width: 180px;
-            /* 原120px，增大50% */
-            max-width: 60vw;
-            height: auto;
-            image-rendering: auto;
-        }
+/* 登录logo图片样式 */
+.login-logo {
+  margin-top: 48px;
+  margin-bottom: 24px;
+  display: block;
+  width: 180px;
+  /* 原120px，增大50% */
+  max-width: 60vw;
+  height: auto;
+  image-rendering: auto;
+  margin-left: auto;  
+  margin-right: auto; 
+}
 
-        .login-container {
-            background: rgba(255,255,255,0.46);
-            padding: 30px;
-            border-radius: 8px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-            width: 300px;
-            margin-top: 60px;
-            /* 下移，保证与logo有间距 */
-        }
+.login-container {
+  background: rgba(255,255,255,0.46);
+  padding: 30px;
+  border-radius: 8px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  width: 300px;
+  margin-top: 60px;
+  margin-left: auto;  /* 添加此行实现水平居中 */
+  margin-right: auto; /* 添加此行实现水平居中 */
+  /* 下移，保证与logo有间距 */
+}
 
-        h2 {
-            text-align: center;
-            color: #333;
-            margin-top: 0;
-        }
+h2 {
+  text-align: center;
+  color: #333;
+  margin-top: 0;
+}
 
-        /* 表单分组样式 */
-        .form-group {
-            margin-bottom: 15px;
-        }
+/* 表单分组样式 */
+.form-group {
+  margin-bottom: 15px;
+  display: flex;
+  flex-direction: column;  /* 改为垂直方向排列 */
+  align-items: flex-start; /* 标签左对齐 */
+  gap: 5px;                /* 减小垂直间距 */
+}
 
-        label {
-            display: block;
-            margin-bottom: 5px;
-            font-weight: bold;
-            color: #555;
-        }
+label {
+  display: block;          /* 恢复块级显示 */
+  width: auto;             /* 自动宽度 */
+  margin-bottom: 5px;      /* 恢复底部边距 */
+  font-weight: bold;
+  color: #555;
+}
 
-        /* 输入框样式 */
-        input[type="text"],
-        input[type="password"] {
-            width: 100%;
-            padding: 10px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            box-sizing: border-box;
-            font-size: 14px;
-        }
+input[type="text"],
+input[type="password"] {
+  flex: 1;                   /* 输入框自适应剩余空间 */
+  padding: 10px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  box-sizing: border-box;
+  font-size: 14px;
+}
 
-        /* 错误信息样式 */
-        .error-message {
-            color: #d32f2f;
-            background-color: #ffebee;
-            padding: 10px;
-            border-radius: 4px;
-            margin-bottom: 15px;
-            text-align: center;
-            font-size: 14px;
-        }
+/* 错误信息样式 */
+.error-message {
+  color: #d32f2f;
+  background-color: #ffebee;
+  padding: 10px;
+  border-radius: 4px;
+  margin-bottom: 15px;
+  text-align: center;
+  font-size: 14px;
+}
 
-        /* 登录按钮样式 */
-        button {
-            width: 100%;
-            padding: 12px;
-            background-color: #4CAF50;
-            color: white;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 16px;
-            font-weight: bold;
-            transition: background-color 0.3s;
-        }
+/* 登录按钮样式 */
+button {
+  width: 100%;
+  padding: 12px;
+  background-color: #4CAF50;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 16px;
+  font-weight: bold;
+  transition: background-color 0.3s;
+}
 
-        button:hover {
-            background-color: #388E3C;
-        }
+button:hover {
+  background-color: #388E3C;
+}
 
-        /* 页脚样式 */
-        .footer {
-            text-align: center;
-            margin-top: 20px;
-            color: #777;
-            font-size: 12px;
-        }
+/* 页脚样式 */
+.footer {
+  text-align: center;
+  margin-top: 20px;
+  color: #777;
+  font-size: 12px;
+}
  
