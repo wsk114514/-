@@ -1,5 +1,4 @@
 // nav-chat-clear.js 导航区点击清空聊天区模块
-
 import { currentFunctionType } from './shared.js';
 
 const menuItems = document.querySelectorAll(".menu-item"); // 所有导航菜单项
@@ -12,14 +11,21 @@ menuItems.forEach((item) => {
     e.preventDefault();
     
     // 获取当前点击的功能类型
-    let buttonText = item.innerText.replace(/\s+/g, " ").trim();
-    let functionType=item.getAttribute('data-function');
-
-    let url=item.getAttribute('data-url');
-    if (url) {
-      let newurl= `${url}?function=${functionType}`;
-      window.location.href = newurl  ; // 如果有链接，跳转到对应页面
+    const buttonText = item.innerText.replace(/\s+/g, " ").trim();
+    
+    // 更新当前功能类型
+    if (buttonText === "今天玩点什么好？") {
+      window.currentFunctionType = "play";
+    } else if (buttonText === "攻略询问") {
+      window.currentFunctionType = "game_guide";
+    } else if (buttonText === "文档检索问答") {
+      window.currentFunctionType = "doc_qa";
+    } else if (buttonText === "游戏百科") {
+      window.currentFunctionType = "game_wiki";
+    } else {
+      window.currentFunctionType = "general";
     }
+    
     // 清空聊天区内容
     chatArea.innerHTML = "";
     
@@ -31,7 +37,7 @@ menuItems.forEach((item) => {
     
     // 发送一个初始消息来获取新功能的欢迎语
     try {
-        const aiReply = await getResponse("你好！", currentFunctionType);
+        const aiReply = await getResponse("你好！", window.currentFunctionType);
         const aiBubble2 = document.createElement("div");
         aiBubble2.className = "chat-bubble ai";
         aiBubble2.textContent = aiReply;
