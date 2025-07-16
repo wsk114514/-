@@ -43,6 +43,7 @@ AI助手:"""
         prompt=prompt,  # 使用自定义提示词
         verbose=True,
     )
+
     return chain
 
 #获得回复

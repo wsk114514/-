@@ -1,19 +1,25 @@
-import React, { createContext, useState, useContext } from 'react';
+import React, { createContext, useState, useContext ,useEffect} from 'react';
 import { getResponse } from '../services/api'; // 添加导入
-
 const FunctionContext = createContext();
 
 export const useFunctionContext = () => useContext(FunctionContext);
 
 export const FunctionProvider = ({ children }) => {
-  const [currentFunctionType, setCurrentFunctionType] = useState('play');
-  const [messages, setMessages] = useState([
-    { 
-      content: '您好！我是睿玩智库！有什么可以帮到您？', 
-      isUser: false,
-      id: Date.now().toString() // 确保ID为字符串
+  const [currentFunctionType, setCurrentFunctionType] = useState('general');
+  const [messages, setMessages] = useState([]);
+  useEffect(() => {
+    const pathSegments = location.pathname.split('/');
+    const functionTypeFromURL = pathSegments[pathSegments.length - 1];
+    
+    // 验证功能类型是否有效
+    const validTypes = ['play', 'game_guide', 'doc_qa', 'game_wiki','general'];
+    if (validTypes.includes(functionTypeFromURL)) {
+      setCurrentFunctionType(functionTypeFromURL);
     }
-  ]);
+  }, []);
+
+
+
 
   // 重新生成消息的函数
   const regenerateMessage = async (messageId) => {

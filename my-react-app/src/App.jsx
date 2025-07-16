@@ -2,7 +2,7 @@ import { useEffect, useRef } from 'react';
 import Sidebar from './components/Sidebar';
 import ChatBubble from './components/ChatBubble';
 import InputBar from './components/InputBar';
-import { useFunctionContext } from './context/FunctionContext';
+import { FunctionProvider, useFunctionContext } from './context/FunctionContext';
 import './assets/styles/main.css';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Login from './pages/Login';
@@ -14,11 +14,14 @@ import Chat from './pages/Chat'; // 添加Chat组件导入
 function App() {
   return (
     <Router>
-      <Routes>
+      <FunctionProvider>
+        <Routes>
         <Route path="/" element={<Login />} />
         <Route path="/register" element={<Register />} />
         <Route path="/chat" element={<Chat />} /> {/* 添加chat路由 */}
-      </Routes>
+        <Route path="/:functionType?"element={<Chat />} /> {/* 添加动态路由 */}
+        </Routes>
+      </FunctionProvider>
     </Router>
   );
 }

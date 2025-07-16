@@ -1,21 +1,13 @@
 import { useState } from 'react';
-import { useFunctionContext } from '../context/FunctionContext';
 
-const ChatBubble = ({ content, isUser, id }) => { // 添加id属性
+const ChatBubble = ({ content, isUser }) => {
   const [copied, setCopied] = useState(false);
-  const isThinking = content === '正在思考...';
-  const { regenerateMessage } = useFunctionContext(); // 获取重新生成函数
+  const isThinking = content === '正在思考...'; // 检测思考状态
 
   const handleCopy = async () => {
     await navigator.clipboard.writeText(content);
     setCopied(true);
     setTimeout(() => setCopied(false), 1200);
-  };
-
-  const handleRegenerate = () => {
-    if (!isUser && !isThinking && id) {
-      regenerateMessage(id);
-    }
   };
 
   return (
@@ -34,9 +26,7 @@ const ChatBubble = ({ content, isUser, id }) => { // 添加id属性
           <button className="bubble-btn copy" onClick={handleCopy}>
             {copied ? '已复制' : '复制'}
           </button>
-          <button className="bubble-btn regen" onClick={handleRegenerate}>
-            重新生成
-          </button>
+          <button className="bubble-btn regen">重新生成</button>
         </div>
       )}
     </div>
