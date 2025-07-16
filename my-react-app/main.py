@@ -1,3 +1,5 @@
+# main.py
+
 import os
 import secrets
 from pathlib import Path
@@ -14,9 +16,11 @@ from fastapi.responses import JSONResponse
 import uvicorn
 # 静态文件挂载
 from fastapi.staticfiles import StaticFiles
+# 添加CORS中间件 
+from fastapi.middleware.cors import CORSMiddleware
 # 导入自定义 LLM 相关方法
-from llm import init_system, get_response
-
+from llm import init_system, get_response, clear_memory
+import logging
 # 获取当前文件所在目录
 BASE_DIR = Path(__file__).resolve().parent
 
@@ -39,8 +43,7 @@ if ENVIRONMENT == "production":
         StaticFiles(directory=os.path.join(BASE_DIR, "../my-react-app/dist")),
         name="spa"
     )
-# 添加CORS中间件 - 新增代码
-from fastapi.middleware.cors import CORSMiddleware
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["http://localhost:3000"],  ## 将5173改为3000
@@ -152,6 +155,27 @@ async def chat(req: ChatRequest):
     except Exception as e:
         # 捕获所有异常并返回详细错误信息
         raise HTTPException(status_code=500, detail=f"服务器内部错误: {str(e)}")
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+# 添加清除记忆的路由
+@app.post("/clear-memory")
+async def clear_chat_memory():
+    logger.info("收到清除记忆请求")
+    try:
+        chain = app.state.llm
+        if not chain:
+            raise HTTPException(status_code=500, detail="LLM服务初始化失败")
+        
+        # 调用llm.py中的清除记忆函数
+        from llm import clear_memory
+        clear_memory(chain)
+        
+        return {"message": "记忆已清除"}
+    except Exception as e:
+        logging.error(f"清除记忆失败: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"清除记忆失败: {str(e)}")
+
 # 删除注册页面路由
 # @app.get("/register", response_class=HTMLResponse)
 # async def register_page(request: Request):
@@ -295,4 +319,3 @@ app.mount(
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app)
-    

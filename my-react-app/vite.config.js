@@ -14,7 +14,8 @@ export default defineConfig({
     proxy: {
       '/login': 'http://localhost:8000',
       '/register': 'http://localhost:8000',
-      '/app': 'http://localhost:8000'
+      '/app': 'http://localhost:8000',
+      '/clear-memory': 'http://localhost:8000',
     }
   }
 });
