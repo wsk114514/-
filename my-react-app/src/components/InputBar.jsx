@@ -4,31 +4,61 @@ import { getResponse } from '../services/api';
 
 const InputBar = () => {
   const [input, setInput] = useState('');
-  const { currentFunctionType, messages, setMessages } = useFunctionContext();
+  const { currentFunctionType, setMessages } = useFunctionContext();
 
   const sendMessage = async () => {
     const message = input.trim();
     if (!message) return;
 
+    // 生成唯一ID
+    const userMsgId = Date.now().toString();
+    const tempMsgId = (Date.now() + 1).toString();
+    
     // 添加用户消息
-    const newMessages = [...messages, { content: message, isUser: true }];
-    setMessages(newMessages);
+    setMessages(prev => [
+      ...prev, 
+      { 
+        content: message, 
+        isUser: true, 
+        id: userMsgId
+      }
+    ]);
+    
     setInput('');
-
+    
     // 添加AI思考中消息
-    setMessages([...newMessages, { content: '正在思考...', isUser: false, temp: true }]);
+    setMessages(prev => [
+      ...prev, 
+      { 
+        content: '正在思考...', 
+        isUser: false, 
+        temp: true,
+        id: tempMsgId
+      }
+    ]);
 
     try {
       const aiReply = await getResponse(message, currentFunctionType);
+      
       // 替换临时消息
-      setMessages(newMessages.filter(m => !m.temp).concat({
-        content: aiReply, isUser: false
-      }));
+      setMessages(prev => [
+        ...prev.filter(m => m.id !== tempMsgId),  // 移除临时消息
+        { 
+          content: aiReply, 
+          isUser: false, 
+          id: (Date.now() + 2).toString() // 新ID
+        }
+      ]);
+      
     } catch (error) {
       console.error('发送消息失败:', error);
-      setMessages(newMessages.filter(m => !m.temp).concat({
-        content: '抱歉，我遇到了一些问题，请稍后再试。', isUser: false
-      }));
+      
+      // 更新错误消息
+      setMessages(prev => prev.map(msg => 
+        msg.id === tempMsgId 
+          ? { ...msg, content: '抱歉，发生错误，请稍后再试。', temp: false } 
+          : msg
+      ));
     }
   };
 

@@ -10,12 +10,30 @@ const Sidebar = () => {
 
     try {
       const aiReply = await getResponse('你好！', functionType);
+      
+      // 为消息添加ID
       setMessages([
-        { content: buttonText, isUser: false },
-        { content: aiReply, isUser: false }
+        { 
+          content: buttonText, 
+          isUser: false, 
+          id: Date.now().toString() 
+        },
+        { 
+          content: aiReply, 
+          isUser: false, 
+          id: (Date.now() + 1).toString() 
+        }
       ]);
     } catch (error) {
       console.error('Error:', error);
+      // 添加错误处理
+      setMessages([
+        { 
+          content: '抱歉，初始化失败，请稍后再试。', 
+          isUser: false, 
+          id: Date.now().toString() 
+        }
+      ]);
     }
   };
 

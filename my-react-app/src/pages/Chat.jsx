@@ -2,15 +2,26 @@ import React from 'react';
 import Sidebar from '../components/Sidebar';
 import ChatBubble from '../components/ChatBubble';
 import InputBar from '../components/InputBar';
+import { useFunctionContext } from '../context/FunctionContext';
 import '../assets/styles/main.css';
 
 const Chat = () => {
+  const { messages } = useFunctionContext();
+
   return (
-    <div className="container"> {/* 修改类名从chat-container为container */}
+    <div className="container">
       <Sidebar />
-      <main className="main-content"> {/* 添加main-content类名 */}
+      <main className="main-content">
         <div className="chat-area">
-          <ChatBubble isUser={false} content="您好！我是睿玩智库！有什么可以帮到您？" />
+          {/* 动态渲染消息列表 */}
+          {messages.map((msg) => (
+            <ChatBubble 
+              key={msg.id} // 确保使用唯一ID
+              isUser={msg.isUser} 
+              content={msg.content}
+              id={msg.id}
+            />
+          ))}
         </div>
         <InputBar />
       </main>
