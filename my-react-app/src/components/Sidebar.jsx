@@ -1,20 +1,27 @@
 import { useFunctionContext } from '../context/FunctionContext';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 
 const Sidebar = () => {
   const navigate = useNavigate();
   const { setCurrentFunctionType, setMessages } = useFunctionContext();
+  const { user, logout } = useAuth();
 
   const handleMenuItemClick = (functionType, e) => {
     e.preventDefault();
     setCurrentFunctionType(functionType);
-    setMessages([]); // 清空消息
-    navigate(`/${functionType}`); // 处理导航
+    navigate(`/${functionType}`);
+  };
+
+  const handleLogout = () => {
+    logout();
+    navigate('/');
   };
 
   return (
     <aside className="sidebar">
       <div className="logo">睿玩智库</div>
+      {user && <div className="user-info">欢迎, {user.username}</div>}
       <nav className="menu">
         <a href="/play" className="menu-item" onClick={(e) => handleMenuItemClick('play', e)}>
           今天<br/>玩点什么好？
@@ -34,6 +41,11 @@ const Sidebar = () => {
         <button className="recent-chat-btn">最近聊天2</button>
         <button className="recent-chat-btn">最近聊天3</button>
       </div>
+      {user && (
+        <button className="logout-btn" onClick={handleLogout}>
+          退出登录
+        </button>
+      )}
     </aside>
   );
 };

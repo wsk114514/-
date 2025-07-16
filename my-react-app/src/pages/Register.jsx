@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 import '../assets/registercss.css';
 
 const Register = () => {
@@ -7,6 +8,7 @@ const Register = () => {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const navigate = useNavigate();
+  const { login } = useAuth();
 
   // 随机背景图片逻辑
   useEffect(() => {
@@ -25,9 +27,17 @@ const Register = () => {
         headers: {'Content-Type': 'application/json'},
         body: JSON.stringify({ username, password })
       });
-      const data = await response.json(); // 添加这行解析错误信息
-      if (!response.ok) throw new Error(data.error || '注册失败');
-      navigate('/');
+      const data = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(data.error || '注册失败');
+      }
+      
+      // 注册成功后直接登录
+      login({ username });
+      
+      // 跳转到聊天页面
+      navigate('/chat');
     } catch (err) {
       setError(err.message);
     }

@@ -1,27 +1,39 @@
-import { useEffect, useRef } from 'react';
-import Sidebar from './components/Sidebar';
-import ChatBubble from './components/ChatBubble';
-import InputBar from './components/InputBar';
-import { FunctionProvider, useFunctionContext } from './context/FunctionContext';
-import './assets/styles/main.css';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { AuthProvider } from './context/AuthContext';
+import { FunctionProvider } from './context/FunctionContext';
 import Login from './pages/Login';
 import Register from './pages/Register';
-import Chat from './pages/Chat'; // 添加Chat组件导入
-
-
+import Chat from './pages/Chat';
+import ProtectedRoute from './components/ProtectedRoute';
+import './assets/styles/main.css';
 
 function App() {
   return (
     <Router>
-      <FunctionProvider>
-        <Routes>
-        <Route path="/" element={<Login />} />
-        <Route path="/register" element={<Register />} />
-        <Route path="/chat" element={<Chat />} /> {/* 添加chat路由 */}
-        <Route path="/:functionType?"element={<Chat />} /> {/* 添加动态路由 */}
-        </Routes>
-      </FunctionProvider>
+      <AuthProvider>
+        <FunctionProvider>
+          <Routes>
+            <Route path="/" element={<Login />} />
+            <Route path="/register" element={<Register />} />
+            <Route 
+              path="/chat" 
+              element={
+                <ProtectedRoute>
+                  <Chat />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/:functionType?" 
+              element={
+                <ProtectedRoute>
+                  <Chat />
+                </ProtectedRoute>
+              } 
+            />
+          </Routes>
+        </FunctionProvider>
+      </AuthProvider>
     </Router>
   );
 }
