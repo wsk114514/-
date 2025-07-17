@@ -9,7 +9,7 @@ const Sidebar = () => {
     const navigate = useNavigate();
     const { setCurrentFunctionType, setMessages } = useFunctionContext();
     const { user, logout } = useAuth();
-
+    // 处理菜单项点击
     const handleMenuItemClick = async (functionType, e) => {
         e.preventDefault();
         // 调用清除记忆的接口
@@ -21,7 +21,7 @@ const Sidebar = () => {
         setCurrentFunctionType(functionType);
         navigate(`/${functionType}`);
     };
-
+    //处理退出登录
     const handleLogout = () => {
         logout();
         navigate('/');

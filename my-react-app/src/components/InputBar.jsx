@@ -14,10 +14,12 @@ const InputBar = () => {
 
   //处理文件上传
   const handleFileUpload =async (e)=>{
-    const file =e.target.files(0);
+    const file =e.target.files[0];
     if(!file)
 
       return;
+
+    // 设置上传状态
     setuploading(true);
     try {
       const formData= new FormData();
@@ -55,12 +57,14 @@ const InputBar = () => {
       }
     }
   };
+  // 触发文件上传
   const triggerFileUpload = () => {
     if (fileInputRef.current) {
       fileInputRef.current.click();
     }
   };
 
+  // 发送消息的函数
   const sendMessage = async () => {
     const message = input.trim();
     if (!message) return;
