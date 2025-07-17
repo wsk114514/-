@@ -16,6 +16,7 @@ export default defineConfig({
       '/register': 'http://localhost:8000',
       '/app': 'http://localhost:8000',
       '/clear-memory': 'http://localhost:8000',
+      '/upload': 'http://localhost:8000',
     }
   }
 });

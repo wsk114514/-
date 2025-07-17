@@ -5,7 +5,7 @@ import secrets
 from pathlib import Path
 from datetime import datetime
 # 导入 FastAPI 相关模块
-from fastapi import FastAPI, Request, Form, Depends, HTTPException, status
+from fastapi import FastAPI, Request, Form, Depends, HTTPException, status,UploadFile,File
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 # 密码加密工具
@@ -175,6 +175,35 @@ async def clear_chat_memory():
     except Exception as e:
         logging.error(f"清除记忆失败: {str(e)}")
         raise HTTPException(status_code=500, detail=f"清除记忆失败: {str(e)}")
+
+
+@app.post("/upload")
+async def upload_file(file: UploadFile = File(...)):
+    try:
+        UPLODAD_DIR = os.path.join(BASE_DIR, "../my-react-app/static/uploads")
+        os.makedirs(UPLODAD_DIR, exist_ok=True)
+
+        file_path = os.path.join(UPLODAD_DIR, file.filename)
+        with open(file_path, "wb") as f:
+            content = await file.read()
+            f.write(content)
+
+        return {
+            "message": "文件上传成功",
+
+            "filename": file.filename,
+        }
+    except Exception as e:
+        logging.error(f"文件上传失败: {str(e)}")
+        return JSONResponse(
+            status_code=500,
+            content={"error": f"文件上传失败: {str(e)}"}
+        )
+
+
+
+
+
 
 # 删除注册页面路由
 # @app.get("/register", response_class=HTMLResponse)
