@@ -87,7 +87,10 @@ def init_vector_store(documents):
             raise ValueError("向量存储创建失败，未插入任何文档")
             
         logger.info(f"成功初始化向量存储, 文档块数: {len(valid_docs)}")
-        return vector_store
+        return vector_store.as_retriever(
+            search_type="similarity",
+            search_kwargs={"k": 4}
+        )
     except Exception as e:
         logger.error(f"向量存储初始化失败: {str(e)}")
         raise

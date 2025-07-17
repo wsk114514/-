@@ -86,16 +86,10 @@ from contextlib import asynccontextmanager
 # Replace @app.on_event("startup") with:
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    """
-    Application lifespan event handler
-    """
-    # Initialize LLM on startup
-    app.state.llm = init_system()
-    yield  # Application runs here
-    # Cleanup resources on shutdown
-    # (Add any cleanup code if needed)
+    #初始化系统
+    app.state.llm_system = init_system()
+    yield 
 
-# Update app creation to use lifespan
 app = FastAPI(lifespan=lifespan)
 
 # 登录验证函数
@@ -154,11 +148,9 @@ async def chat(req: ChatRequest):
         raise HTTPException(status_code=400, detail="消息不能为空")
     
     try:
-        chain = app.state.llm  # 获取 ConversationChain 实例
-        if not chain:
-            raise HTTPException(status_code=500, detail="LLM服务初始化失败")
-        
-        response = get_response(message, chain, function)
+        system=app.state.llm_system#获取系统对象
+        response=get_response(message,system, function)
+
         return {"response": response}
     except Exception as e:
         # 捕获所有异常并返回详细错误信息
@@ -173,13 +165,8 @@ logger = logging.getLogger(__name__)
 async def clear_chat_memory():
     logger.info("收到清除记忆请求")
     try:
-        chain = app.state.llm
-        if not chain:
-            raise HTTPException(status_code=500, detail="LLM服务初始化失败")
-        
-        # 调用llm_chain.py中的清除记忆函数
-        from llm_chain import clear_memory
-        clear_memory(chain)
+        system = app.state.llm_system
+        clear_memory(system)
         
         return {"message": "记忆已清除"}
     except Exception as e:

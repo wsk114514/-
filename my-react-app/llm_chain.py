@@ -1,12 +1,13 @@
 import os
-from langchain.chains import ConversationChain, ConversationalRetrievalChain
+from langchain_core.runnables import RunnablePassthrough, RunnableLambda
+from langchain_core.prompts import ChatPromptTemplate
+from langchain_core.output_parsers import StrOutputParser
 from langchain.memory import ConversationBufferMemory
-from langchain.prompts import PromptTemplate
 from langchain_community.chat_models import ChatTongyi
 from langchain_chroma import Chroma  
 from document_processing import CHROMA_PATH, init_embeddings, clear_vector_store
 import logging
-from langchain.schema import HumanMessage, AIMessage  # 添加消息类型
+from operator import itemgetter
 
 # 配置日志
 logging.basicConfig(level=logging.INFO)
@@ -31,7 +32,8 @@ def init_llm():
 def init_memory():
     """初始化对话记忆"""
     return ConversationBufferMemory(
-        
+        return_messages=True,
+        memory_key="chat_history"
     )
 
 class EmptyDocQAChain:
@@ -39,16 +41,20 @@ class EmptyDocQAChain:
     def __call__(self, *args, **kwargs):
         return {"answer": "不清楚文档内容，请上传文档内容后重试。"}
     
-    def invoke(self,input_data, *args, **kwargs):
+    def invoke(self, input_data, *args, **kwargs):
         return {"answer": "不清楚文档内容，请上传文档内容后重试。"}
 
+def format_docs(docs):
+    """格式化检索到的文档"""
+    return "\n\n".join(doc.page_content for doc in docs)
+
 def init_doc_qa_system(llm):
-    """初始化文档问答系统"""
+    """初始化文档问答系统 (LCEL版本)"""
     global doc_qa_chain
     if doc_qa_chain is not None:
         return doc_qa_chain
     
-    # 统一使用文档问答提示词模板
+    # LCEL提示词模板
     qa_template = """你是睿玩智库的文档检索助手形态，请根据提供的文档内容回答问题。如果文档内容不包含答案，请回答"根据文档内容，我无法回答这个问题"。
     
     文档内容：
@@ -60,10 +66,7 @@ def init_doc_qa_system(llm):
     人类: {question}
     AI助手:"""
     
-    QA_PROMPT = PromptTemplate(
-        template=qa_template, 
-        input_variables=["context", "chat_history","question"]
-    )
+    QA_PROMPT = ChatPromptTemplate.from_template(qa_template)
     
     try:
         # 检查向量数据库是否存在
@@ -81,74 +84,89 @@ def init_doc_qa_system(llm):
             search_type="similarity",
             search_kwargs={"k": 4}
         )
-        memory=ConversationBufferMemory(
-            memory_key="chat_history",
-            output_key="answer",
-            return_messages=True
+        
+        # LCEL链构建
+        doc_qa_chain = (
+            {
+                "context": itemgetter("question") | retriever | RunnableLambda(format_docs),
+                "chat_history": itemgetter("chat_history"),
+                "question": itemgetter("question")
+            }
+            | QA_PROMPT
+            | llm
+            | StrOutputParser()
         )
-        # 使用新的初始化方式避免 chat_history 问题
-        doc_qa_chain = ConversationalRetrievalChain.from_llm(
-            llm=llm,
-            retriever=retriever,
-            memory=memory,
-            return_source_documents=True,
-            combine_docs_chain_kwargs={"prompt": QA_PROMPT},
-            verbose=True,
-            output_key="answer"
-        )
-        logger.info("文档问答系统初始化成功")
+        
+        logger.info("文档问答系统(LCEL)初始化成功")
         return doc_qa_chain
     except Exception as e:
         logger.error(f"文档问答系统初始化失败: {str(e)}")
-        # 返回一个默认的问答链
         doc_qa_chain = EmptyDocQAChain()
         return doc_qa_chain
 
 def init_system():
-    """初始化对话系统"""
+    """初始化对话系统 (LCEL版本)"""
     try:
         llm = init_llm()
         memory = init_memory()
         
-        # 默认提示词模板
-        doc_qa_template = """你是一个AI助手，名字叫做睿玩智库。请使用中文，结合文档内容回答用户问题。注意：如果没有文档内容，必须回答：不清楚文档内容,请上传文档内容后重试。一定不要编造内容。
+        # 动态角色描述
+        role_descriptions = {
+            "play": "你是睿玩智库的游戏推荐助手形态，根据用户的喜好推荐游戏，如果不清楚，请说不知道。",
+            "game_guide": "你是睿玩智库的游戏攻略助手形态，精确，严谨地回答用户关于游戏的各种问题，如果不清楚，请说不知道。",
+            "doc_qa": "你是睿玩智库的文档检索助手形态，根据文档内容回答问题，注意：如果没有传入文档内容，必须回答：不清楚文档内容，不要编造内容。",
+            "game_wiki": "你是睿玩智库的游戏百科助手形态，提供游戏的详细信息和背景知识，如果不清楚，请说不知道。"
+        }
 
-当前对话历史：
-{history}
-
-人类: {input}
-AI助手:"""
-
-        prompt = PromptTemplate(
-            input_variables=["history", "input"],
-            template=doc_qa_template
+        # LCEL提示词模板
+        template = """你的名字叫做睿玩智库。你有多种形态，请用中文回答用户的问题。下面是你的形态描述：
+        {role_description}
+        
+        当前对话历史：
+        {chat_history}
+        
+        人类: {input}
+        AI助手:"""
+        
+        prompt = ChatPromptTemplate.from_template(template)
+        
+        # LCEL链构建
+        chain = (
+            {
+                "role_description": RunnableLambda(
+                    lambda x: role_descriptions.get(
+                        x.get("function", ""),
+                        "你是睿玩智库的通用助手形态，帮助用户解决问题，如果不清楚，请说不知道。"
+                    )
+                ),
+                "chat_history": RunnableLambda(lambda x: memory.load_memory_variables({})["chat_history"]),
+                "input": itemgetter("input")
+            }
+            | prompt
+            | llm
+            | StrOutputParser()
         )
-
-        chain = ConversationChain(
-            llm=llm,
-            memory=memory,
-            prompt=prompt,
-            verbose=True  # 关闭详细日志
-        )
-        logger.info("对话系统初始化成功")
-        return chain
+        
+        logger.info("对话系统(LCEL)初始化成功")
+        return {
+            "chain": chain,
+            "memory": memory,
+            "llm": llm  # 单独存储LLM对象
+        }
     except Exception as e:
         logger.error(f"对话系统初始化失败: {str(e)}")
-        # 返回一个简单的错误处理链
-        return ConversationChain(
-            llm=ChatTongyi(name="qwen-turbo", api_key="dummy_key"),
-            memory=ConversationBufferMemory(),
-            prompt=PromptTemplate(
-                input_variables=["history", "input"],
-                template="系统初始化失败，请检查配置。人类: {question} AI助手:"
-            )
-        )
+        # 返回简单的错误处理链
+        return {
+            "chain": RunnableLambda(lambda x: "系统初始化失败，请检查配置"),
+            "memory": ConversationBufferMemory(),
+            "llm": None
+        }
 
-def clear_memory(chain):
+def clear_memory(system):
     """清除对话记忆"""
     global doc_qa_chain
     try:
-        chain.memory.clear()
+        system["memory"].clear()
         logger.info("对话记忆已清除")
         
         if doc_qa_chain and hasattr(doc_qa_chain, 'memory'):
@@ -159,58 +177,44 @@ def clear_memory(chain):
     except Exception as e:
         logger.error(f"清除记忆失败: {str(e)}")
 
-def get_response(message: str, chain: ConversationChain, function: str) -> str:
-
-    role_descriptions = {
-            "play": "你是睿玩智库的游戏推荐助手形态，根据用户的喜好推荐游戏，如果不清楚，请说不知道。",
-            "game_guide": "你是睿玩智库的游戏攻略助手形态，精确，严谨地回答用户关于游戏的各种问题，如果不清楚，请说不知道。",
-            "doc_qa": "你是睿玩智库的文档检索助手形态，根据文档内容回答问题，注意：如果没有传入文档内容，必须回答：不清楚文档内容，不要编造内容。",
-            "game_wiki": "你是睿玩智库的游戏百科助手形态，提供游戏的详细信息和背景知识，如果不清楚，请说不知道。"
-        }
-    role_description = role_descriptions.get(function, 
-            "你是睿玩智库的通用助手形态，帮助用户解决问题，如果不清楚，请说不知道。")
-        
-        # 更新提示词模板
-    template = f"""你的名字叫做睿玩智库。你有多种形态，请用中文回答用户的问题。下面是你的形态描述：
-{role_description}
-
-当前对话历史：
-{{history}}
-
-人类: {{input}}
-AI助手:"""
-    """获取LLM响应"""
+def get_response(message: str, system: dict, function: str) -> str:
+    """获取LLM响应 (LCEL版本)"""
     try:
         # 文档问答功能
         if function == "doc_qa":
-            doc_qa_chain = init_doc_qa_system(chain.llm)
+            # 使用单独存储的LLM对象
+            doc_qa_chain = init_doc_qa_system(system["llm"])
             try:
-                result=doc_qa_chain.invoke({"question": message})
-                response=result["answer"]
+                # 获取当前对话历史
+                chat_history = system["memory"].load_memory_variables({})["chat_history"]
                 
-                # 添加来源信息
-                source_docs = result.get("source_documents", [])
-                if source_docs:
-                    sources = {os.path.basename(doc.metadata.get("source", "")) for doc in source_docs}
-                    if sources:
-                        source_info = "\n\n信息来源："
-                        for i, source in enumerate(sources):
-                            if source:  # 确保源文件名为非空
-                                source_info += f"\n[{i+1}] {source}"
-                        response += source_info
-                return response
+                result = doc_qa_chain.invoke({
+                    "question": message,
+                    "chat_history": chat_history
+                })
+                
+                # 将文档问答的结果保存到记忆
+                system["memory"].save_context(
+                    {"input": message},
+                    {"output": result}
+                )
+                
+                return result
             except Exception as e:  
                 logger.error(f"处理文档问答时出错: {str(e)}")
                 return "处理文档时发生错误，请稍后再试"
         
-        # 根据功能选择角色描述
-        chain.prompt.template = template
-        response = chain.invoke({"input": message})["response"]
+        # 通用对话功能
+        response = system["chain"].invoke({
+            "input": message,
+            "function": function
+        })
         
-        # 清理思考痕迹
-        if "<think>" in response:
-            parts = response.split("</think>")
-            return parts[-1].strip()
+        # 更新记忆
+        system["memory"].save_context(
+            {"input": message},
+            {"output": response}
+        )
         
         return response.strip()
     except Exception as e:
