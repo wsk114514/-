@@ -6,7 +6,7 @@
   display: flex;
   gap: 8px;
   position: absolute;
-  bottom: -20px;
+  bottom: -35px; /* 与气泡底部距离10px */
   left: 0;
   padding-left: 10px;
   box-sizing: border-box;
@@ -30,14 +30,14 @@
 }
 /* 修改AI气泡为纯色背景 */
 .chat-bubble.ai {
-  background: #81d762; /* 浅灰色纯色背景 */
+  background: linear-gradient(90deg, #388e3c 0%, #b6f7a0 100%); /* 左侧更深绿色 */
   color: #333; /* 深灰色文字确保可读性 */
   border-bottom-left-radius: 4px;
 }
 
 /* 用户气泡 */
 .chat-bubble.user {
-  background: #0084ff;
+  background: linear-gradient(90deg, #1976d2 0%, #64b5f6 100%); /* 渐变蓝色 */
   color: white;
   border-bottom-right-radius: 4px;
 }
