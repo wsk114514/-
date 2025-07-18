@@ -6,7 +6,7 @@ from pathlib import Path
 from datetime import datetime
 # 导入 FastAPI 相关模块
 from fastapi import FastAPI, Request, Form, Depends, HTTPException, status,UploadFile,File
-from fastapi.responses import HTMLResponse, RedirectResponse
+from fastapi.responses import HTMLResponse, RedirectResponse, StreamingResponse
 from fastapi.templating import Jinja2Templates
 # 密码加密工具
 from passlib.context import CryptContext
@@ -20,9 +20,11 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 from typing import Dict
 # 导入自定义 LLM 相关方法
-from llm_chain import init_system, get_response, clear_memory
+from llm_chain import init_system, get_response, get_response_stream, clear_memory
 from document_processing import process_uploaded_file, split_documents, init_vector_store, clear_vector_store, generate_document_summary
 import logging
+import json
+import asyncio
 
 # 获取当前文件所在目录
 BASE_DIR = Path(__file__).resolve().parent
@@ -155,6 +157,28 @@ async def chat(req: ChatRequest):
     except Exception as e:
         # 捕获所有异常并返回详细错误信息
         raise HTTPException(status_code=500, detail=f"服务器内部错误: {str(e)}")
+
+@app.post("/app/stream")
+async def chat_stream(req: ChatRequest):
+    """
+    流式处理聊天请求，逐字返回 LLM 回复。
+    """
+    message = req.message.strip()
+    function = req.function
+    if not message:
+        raise HTTPException(status_code=400, detail="消息不能为空")
+    
+    async def generate():
+        try:
+            system = app.state.llm_system
+            async for chunk in get_response_stream(message, system, function):
+                yield f"data: {json.dumps({'chunk': chunk}, ensure_ascii=False)}\n\n"
+        except Exception as e:
+            yield f"data: {json.dumps({'error': str(e)}, ensure_ascii=False)}\n\n"
+        finally:
+            yield "data: [DONE]\n\n"
+    
+    return StreamingResponse(generate(), media_type="text/plain")
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)

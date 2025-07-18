@@ -1,6 +1,6 @@
 import { useState ,useRef } from 'react';
 import { useFunctionContext } from '../context/FunctionContext';
-import { getResponse } from '../services/api';
+import { getResponse, getResponseStream } from '../services/api';
 
 const InputBar = () => {
   const [input, setInput] = useState('');
@@ -71,7 +71,7 @@ const InputBar = () => {
 
     // 生成唯一ID
     const userMsgId = Date.now().toString();
-    const tempMsgId = (Date.now() + 1).toString();
+    const aiMsgId = (Date.now() + 1).toString();
     
     // 添加用户消息
     setMessages(prev => [
@@ -91,31 +91,32 @@ const InputBar = () => {
       { 
         content: '正在思考...', 
         isUser: false, 
-        temp: true,
-        id: tempMsgId
+        id: aiMsgId
       }
     ]);
 
     try {
-      const aiReply = await getResponse(message, currentFunctionType);
+      // 使用流式响应
+      let aiResponse = '';
       
-      // 替换临时消息
-      setMessages(prev => [
-        ...prev.filter(m => m.id !== tempMsgId),  // 移除临时消息
-        { 
-          content: aiReply, 
-          isUser: false, 
-          id: (Date.now() + 2).toString() // 新ID
-        }
-      ]);
+      await getResponseStream(message, currentFunctionType, (chunk) => {
+        aiResponse += chunk;
+        
+        // 实时更新AI消息
+        setMessages(prev => prev.map(msg => 
+          msg.id === aiMsgId 
+            ? { ...msg, content: aiResponse } 
+            : msg
+        ));
+      });
       
     } catch (error) {
       console.error('发送消息失败:', error);
       
       // 更新错误消息
       setMessages(prev => prev.map(msg => 
-        msg.id === tempMsgId 
-          ? { ...msg, content: '抱歉，发生错误，请稍后再试。', temp: false } 
+        msg.id === aiMsgId 
+          ? { ...msg, content: '抱歉，发生错误，请稍后再试。' } 
           : msg
       ));
     }
@@ -150,7 +151,7 @@ const InputBar = () => {
           </button>
         </>
       )}
-      <button className="send-btn">
+      <button className="send-btn" onClick={sendMessage}>
         发送
       </button>
     </div>

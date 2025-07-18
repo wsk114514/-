@@ -220,3 +220,52 @@ def get_response(message: str, system: dict, function: str) -> str:
     except Exception as e:
         logger.error(f"获取响应失败: {str(e)}")
         return "系统处理请求时出错，请稍后再试"
+
+async def get_response_stream(message: str, system: dict, function: str):
+    """获取LLM流式响应"""
+    try:
+        # 文档问答功能
+        if function == "doc_qa":
+            doc_qa_chain = init_doc_qa_system(system["llm"])
+            try:
+                chat_history = system["memory"].load_memory_variables({})["chat_history"]
+                
+                # 使用 astream 进行流式处理
+                full_response = ""
+                async for chunk in doc_qa_chain.astream({
+                    "question": message,
+                    "chat_history": chat_history
+                }):
+                    if chunk:
+                        full_response += chunk
+                        yield chunk
+                
+                # 保存完整响应到记忆
+                system["memory"].save_context(
+                    {"input": message},
+                    {"output": full_response}
+                )
+                
+            except Exception as e:
+                logger.error(f"处理文档问答时出错: {str(e)}")
+                yield "处理文档时发生错误，请稍后再试"
+        else:
+            # 通用对话功能
+            full_response = ""
+            async for chunk in system["chain"].astream({
+                "input": message,
+                "function": function
+            }):
+                if chunk:
+                    full_response += chunk
+                    yield chunk
+            
+            # 保存完整响应到记忆
+            system["memory"].save_context(
+                {"input": message},
+                {"output": full_response}
+            )
+            
+    except Exception as e:
+        logger.error(f"获取流式响应失败: {str(e)}")
+        yield "系统处理请求时出错，请稍后再试"
