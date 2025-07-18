@@ -107,3 +107,8 @@
   0%, 100% { opacity: 0.5; }
   50% { opacity: 1; }
 }
+
+/* 顶部功能标题样式，确保为白色 */
+.function-header h2 {
+  color: #fff !important;
+}
