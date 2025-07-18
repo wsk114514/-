@@ -168,6 +168,7 @@ body {
 /* 聊天气泡样式 */
 .chat-bubble {
     max-width: 65%;
+    width: fit-content; /* 气泡宽度适应内容 */
     padding: 12px 18px;
     border-radius: 14px;
     font-size: 1.5em;
