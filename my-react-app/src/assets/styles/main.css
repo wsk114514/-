@@ -112,3 +112,32 @@
 .function-header h2 {
   color: #fff !important;
 }
+
+/* 让底部按钮横向排列并有间距 */
+.sidebar-aligned-container {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+/* 缩小退出登录按钮 */
+.sidebar-logout-btn {
+  padding: 6px 14px;
+  font-size: 16px;
+  border-radius: 4px;
+}
+
+/* 缩小发送按钮 */
+.send-btn {
+  padding: 6px 16px;
+  font-size: 16px;
+  border-radius: 4px;
+}
+
+/* 聊天输入框字体大小提升 */
+.chat-input {
+  font-size: 18px;
+}
+.chat-input::placeholder {
+  font-size: 18px;
+}

@@ -4,7 +4,7 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: flex-start;
+  justify-content: center; /* 垂直居中 */
   min-height: 100vh;
   width: 100%;
 }
@@ -32,34 +32,46 @@ body {
 
 /* 登录logo图片样式 */
 .login-logo {
-  margin-top: 48px;
+  /* 移除所有背景、边框、阴影，仅保留图片本身 */
+  margin-top: 32px;
   margin-bottom: 24px;
   display: block;
   width: 180px;
-  /* 原120px，增大50% */
   max-width: 60vw;
   height: auto;
   image-rendering: auto;
-  margin-left: auto;  
-  margin-right: auto; 
+  margin-left: auto;
+  margin-right: auto;
+  background: none;
+  box-shadow: none;
+  border: none;
+  border-radius: 0;
 }
 
 .login-container {
   background: rgba(255,255,255,0.46);
-  padding: 30px;
-  border-radius: 8px;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-  width: 300px;
-  margin-top: 60px;
-  margin-left: auto;  /* 添加此行实现水平居中 */
-  margin-right: auto; /* 添加此行实现水平居中 */
+  padding: 28px 20px 20px 20px;
+  border-radius: 12px;
+  box-shadow: 0 6px 32px rgba(0,0,0,0.10);
+  width: 100%;
+  min-width: 260px;
+  max-width: 320px;
+  margin-top: 0; /* 居中后无需额外上边距 */
+  margin-left: auto;
+  margin-right: auto;
   /* 下移，保证与logo有间距 */
 }
 
-h2 {
+.login-container h2 {
+  background: none;
+  border: none;
+  box-shadow: none;
+  border-radius: 0;
+  margin-bottom: 18px;
   text-align: center;
-  color: #333;
-  margin-top: 0;
+  color: #222;
+  font-size: 2em;
+  font-weight: bold;
 }
 
 /* 表单分组样式 */
