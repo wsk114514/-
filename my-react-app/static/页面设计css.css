@@ -193,7 +193,8 @@ body {
 
 /* 侧边栏位置的退出登录按钮 */
 .sidebar-logout-btn {
-    width: 120px; /* 与侧边栏宽度匹配 */
+    width: 180px; /* 从120px增加到150px */
+    height: 60px;
     padding: 12px 0;
     margin-right: 16px;
     border-radius: 8px;
@@ -221,8 +222,9 @@ body {
 
 /* 调整输入框样式 */
 .chat-input {
-    flex: 1;
-    padding: 12px 28px !important; /* 增加!important确保样式被应用 */
+    flex: 0.8; /* 从flex: 1减少到flex: 0.8，缩小输入框 */
+    height: 60px;
+    padding: 12px 28px !important;
     border-radius: 8px;
     border: none;
     background: #252529;
@@ -230,13 +232,14 @@ body {
     font-size: 1.2em;
     outline: none;
     min-width: 0;
-    box-sizing: border-box; /* 确保padding不会增加总宽度 */
+    box-sizing: border-box;
 }
 
 /* 发送按钮样式 */
 .send-btn {
-    width: 120px; /* 与退出登录按钮宽度一致 */
-    padding: 12px 0; /* 与退出登录按钮内边距一致 */
+    height: 60px;
+    width: 180px; 
+    padding: 12px 0;
     border-radius: 8px;
     border: none;
     background: #4f5ef6;
@@ -289,4 +292,8 @@ body {
         padding-left: 12px;
         padding-right: 12px;
     }
+}
+/* 交换按钮位置 */
+.sidebar-aligned-container {
+    flex-direction: row-reverse;
 }
