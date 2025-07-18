@@ -122,7 +122,7 @@ const InputBar = () => {
   };
 
   return (
-    <div className="input-bar">
+    <div className="input-bar-inner">
       <input
         type="text"
         className="chat-input"
@@ -142,7 +142,7 @@ const InputBar = () => {
             disabled={uploading}
           />
           <button 
-            className="upload-btn" 
+            className="send-btn upload-btn"
             onClick={triggerFileUpload}
             disabled={uploading}
           >
@@ -150,8 +150,7 @@ const InputBar = () => {
           </button>
         </>
       )}
-      
-      <button className="send-btn" onClick={sendMessage}>
+      <button className="send-btn">
         发送
       </button>
     </div>

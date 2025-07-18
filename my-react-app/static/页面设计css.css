@@ -76,47 +76,49 @@ body {
     font-family: 'Segoe UI', 'Arial', sans-serif;
     background: #18181c;
     color: #fff;
+    height: 100vh;
+    overflow: hidden;
 }
 
 /* 主容器，左右分栏布局 */
 .container {
     display: flex;
     height: 100vh;
-    width: 100vw; /* 添加宽度全屏设置 */
-    margin: 0; /* 移除默认外边距 */
-    padding: 0; /* 移除默认内边距 */
+    width: 100vw;
+    margin: 0;
+    padding: 0;
 }
 
 /* 左侧导航栏样式 */
 .sidebar {
-    width: 220px;
+    width: 200px; /* 调整侧边栏宽度 */
     background: #23232a;
     display: flex;
     flex-direction: column;
-    padding: 24px 0;
-    box-shadow: 2px 0 8px rgba(0, 0, 0, 0.08);
+    padding: 20px 0;
+    box-shadow: 2px 0 8px rgba(0, 0, 0, 0.1);
     position: relative;
-    z-index: 10; /* 确保导航栏在背景图之上 */
-    height: 100vh; /* 强制占满视口高度 */
+    z-index: 10;
+    height: 100vh;
 }
 
 /* Logo样式 */
 .logo {
-    font-size: 2.3em;
+    font-size: 2.0em;
     font-weight: bold;
     color: #fff;
     text-align: center;
-    margin-bottom: 32px;
-    letter-spacing: 2px;
+    margin-bottom: 24px;
+    letter-spacing: 1px;
 }
 
 /* 导航菜单样式 */
 .menu {
     display: flex;
     flex-direction: column;
-    gap: 18px;
+    gap: 12px;
     align-items: center;
-    font-size: 1.5em;
+    font-size: 1.4em;
     text-align: center;
 }
 
@@ -124,16 +126,10 @@ body {
 .menu-item {
     color: #bdbdbd;
     text-decoration: none;
-    padding: 10px 32px;
-    border-radius: 8px;
+    padding: 8px 24px;
+    border-radius: 6px;
     transition: background 0.2s, color 0.2s;
-}
-
-/* 激活或悬停时菜单项高亮 */
-.menu-item.active,
-.menu-item:hover {
-    background: #353542;
-    color: #fff;
+    width: 80%;
 }
 
 /* 右侧主内容区 */
@@ -142,109 +138,109 @@ body {
     display: flex;
     flex-direction: column;
     background: #18181c;
+    height: 100vh;
+    position: relative;
 }
 
-/* 顶部搜索栏 */
-.top-bar {
-    padding: 24px 32px 0 32px;
-}
-
-/* 搜索框样式 */
-.search {
-    width: 100%;
-    padding: 10px 16px;
-    border-radius: 8px;
-    border: none;
+/* 功能标题 */
+.function-header {
+    padding: 16px 24px;
     background: #23232a;
-    color: #fff;
-    font-size: 1em;
-    outline: none;
+    border-bottom: 1px solid #333;
+}
+
+.function-header h2 {
+    margin: 0;
+    font-size: 1.8em;
+    font-weight: 600;
 }
 
 /* 聊天气泡区域 */
 .chat-area {
     flex: 1;
-    padding: 24px 32px;
+    padding: 20px 24px;
     display: flex;
     flex-direction: column;
-    gap: 60px; /* 气泡间距，略大于按钮高度 */
+    gap: 40px;
     overflow-y: auto;
 }
 
 /* 聊天气泡样式 */
 .chat-bubble {
-    max-width: 60%;
-    padding: 14px 20px;
-    border-radius: 16px;
-    font-size: 2.0em;
+    max-width: 65%;
+    padding: 12px 18px;
+    border-radius: 14px;
+    font-size: 1.5em;
     margin-bottom: 4px;
     word-break: break-word;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
 }
 
-/* 用户气泡样式（右侧） */
-.chat-bubble.user {
-    background: linear-gradient(90deg, #4f5ef6 0%, #23232a 100%);
-    align-self: flex-end;
-    font-size: 1.6em;
-    animation: bubble-pop 0.7s cubic-bezier(0.42,0,0.58,1);
+/* 底部输入栏容器 */
+.input-bar-container {
+    padding: 16px 24px;
+    background: #18181c;
+    border-top: 1px solid #333;
 }
 
-/* AI气泡样式（左侧） */
-.chat-bubble.ai {
-    background: linear-gradient(90deg, #4bdd44 0%, #23232a 100%);
-    align-self: flex-start;
-    font-size: 1.6em;
-    animation: bubble-pop 0.7s cubic-bezier(0.42,0,0.58,1);
-}
-
-/* 气泡弹出动画（AI与用户通用） */
-@keyframes bubble-pop {
-    0% {
-        transform: scale(0.7);
-        opacity: 0;
-    }
-    60% {
-        transform: scale(1.1);
-        opacity: 1;
-    }
-    100% {
-        transform: scale(1);
-        opacity: 1;
-    }
-}
-
-/* 底部输入栏 */
-.input-bar {
+/* 侧边栏对齐容器 */
+.sidebar-aligned-container {
     display: flex;
-    padding: 16px 32px;
-    background: #23232a;
-    border-top: 1px solid #222;
+    align-items: center;
+    width: 100%;
 }
 
-/* 输入框样式 */
-.chat-input {
-    flex: 1;
-    padding: 18px 20px;
+/* 侧边栏位置的退出登录按钮 */
+.sidebar-logout-btn {
+    width: 120px; /* 与侧边栏宽度匹配 */
+    padding: 12px 0;
+    margin-right: 16px;
     border-radius: 8px;
     border: none;
-    background: #18181c;
+    background: #ff4d4f;
     color: #fff;
-    font-size: 1.15em;
+    font-size: 1.1em;
+    cursor: pointer;
+    transition: background 0.2s;
+    flex-shrink: 0; /* 防止按钮被压缩 */
+}
+
+.sidebar-logout-btn:hover {
+    background: #ff7875;
+}
+
+/* 输入栏内部容器 */
+.input-bar-inner {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    width: 100%;
+    padding: 10px 0; /* 增加容器内边距 */
+}
+
+/* 调整输入框样式 */
+.chat-input {
+    flex: 1;
+    padding: 12px 28px !important; /* 增加!important确保样式被应用 */
+    border-radius: 8px;
+    border: none;
+    background: #252529;
+    color: #fff;
+    font-size: 1.2em;
     outline: none;
+    min-width: 0;
+    box-sizing: border-box; /* 确保padding不会增加总宽度 */
 }
 
 /* 发送按钮样式 */
 .send-btn {
-    margin-left: 16px;
-    padding: 0 36px;
-    height: 52px;
-    min-width: 120px;
-    border-radius: 10px;
+    width: 120px; /* 与退出登录按钮宽度一致 */
+    padding: 12px 0; /* 与退出登录按钮内边距一致 */
+    border-radius: 8px;
     border: none;
     background: #4f5ef6;
     color: #fff;
-    font-size: 1.25em;
+    font-size: 1.1em;
     cursor: pointer;
     transition: background 0.2s;
 }
@@ -252,6 +248,15 @@ body {
 /* 发送按钮悬停效果 */
 .send-btn:hover {
     background: #3a47c9;
+}
+
+/* 上传按钮特殊样式 */
+.upload-btn {
+    background: #353542;
+}
+
+.upload-btn:hover {
+    background: #454555;
 }
 
 /* 响应式布局，适配小屏设备 */

@@ -50,11 +50,7 @@ const Sidebar = () => {
                 <button className="recent-chat-btn">最近聊天2</button>
                 <button className="recent-chat-btn">最近聊天3</button>
             </div>
-            {user && (
-                <button className="logout-btn" onClick={handleLogout}>
-                    退出登录
-                </button>
-            )}
+            {/* 移除原来的退出登录按钮 */}
         </aside>
     );
 };

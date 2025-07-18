@@ -4,12 +4,14 @@ import ChatBubble from '../components/ChatBubble';
 import InputBar from '../components/InputBar';
 import { useFunctionContext } from '../context/FunctionContext';
 import { useLocation } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 import '../assets/styles/main.css';
 
 const Chat = () => {
   const { messages, currentFunctionType, setMessages } = useFunctionContext();
   const location = useLocation();
   const [initialized, setInitialized] = useState(false);
+  const { user, logout } = useAuth();
   
   // 功能标题映射
   const functionTitles = {
@@ -69,7 +71,16 @@ const Chat = () => {
             />
           ))}
         </div>
-        <InputBar />
+        <div className="input-bar-container">
+          <div className="sidebar-aligned-container">
+            {user && (
+              <button className="sidebar-logout-btn" onClick={logout}>
+                退出登录
+              </button>
+            )}
+            <InputBar />
+          </div>
+        </div>
       </main>
     </div>
   );
