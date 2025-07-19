@@ -100,8 +100,8 @@ export async function getResponseStream(message, function_type, onChunk) {
 
                         try {
                             const parsed = JSON.parse(data);
-                            if (parsed.chunk) {
-                                chunkQueue.push(parsed.chunk);
+                            if (parsed.content) {
+                                chunkQueue.push(parsed.content);
                                 processQueue(); // 不等待，让队列异步处理
                             } else if (parsed.error) {
                                 throw new Error(parsed.error);
@@ -123,7 +123,7 @@ export async function getResponseStream(message, function_type, onChunk) {
 // api.js
 export async function clearMemory() {
     try {
-        const response = await fetch('/clear-memory', {
+        const response = await fetch('http://localhost:8000/memory/clear', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -133,7 +133,10 @@ export async function clearMemory() {
         if (!response.ok) {
             throw new Error('清除记忆失败');
         }
+
+        return await response.json();
     } catch (error) {
-        throw new Error(error.message || '网络请求失败，请检查后端服务是否正常运行');
+        console.error('清除记忆失败:', error);
+        throw error;
     }
 }
