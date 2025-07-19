@@ -1,0 +1,78 @@
+/*
+states.css - 加载和错误状态组件样式
+包含：加载状态、错误边界、错误详情等
+*/
+
+/* ========== 加载状态 ========== */
+.loading {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    font-size: var(--spacing-2xl);
+    color: var(--text-primary);
+}
+
+/* ========== 错误边界样式 ========== */
+.error-boundary {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    background: var(--bg-primary);
+    color: var(--text-primary);
+}
+
+.error-boundary-content {
+    text-align: center;
+    padding: 40px;
+    max-width: 500px;
+}
+
+.error-boundary-content h2 {
+    color: var(--accent-danger);
+    margin-bottom: var(--spacing-lg);
+}
+
+.error-actions {
+    display: flex;
+    gap: var(--spacing-md);
+    justify-content: center;
+    margin: var(--spacing-2xl) 0;
+}
+
+.retry-btn, .reload-btn {
+    padding: 10px var(--spacing-xl);
+    border: none;
+    border-radius: var(--border-radius-sm);
+    background: var(--accent-primary);
+    color: var(--text-primary);
+    cursor: pointer;
+    transition: background var(--transition-fast);
+}
+
+.retry-btn:hover, .reload-btn:hover {
+    background: var(--accent-secondary);
+}
+
+.error-details {
+    margin-top: var(--spacing-2xl);
+    text-align: left;
+    background: var(--bg-secondary);
+    padding: var(--spacing-lg);
+    border-radius: var(--border-radius-md);
+    border: 1px solid var(--border-color);
+}
+
+.error-details summary {
+    cursor: pointer;
+    color: var(--accent-primary);
+    margin-bottom: var(--spacing-md);
+}
+
+.error-details pre {
+    color: var(--accent-danger);
+    font-size: 0.9em;
+    white-space: pre-wrap;
+    word-break: break-word;
+}

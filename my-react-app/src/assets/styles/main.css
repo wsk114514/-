@@ -1,147 +1,46 @@
-/* 复制原有CSS内容并修改图片引用路径 */
-/* 将background1.png改为@assets/background1.png */
+/*
+main.css - 主样式入口文件
+导入所有模块化的CSS文件，统一管理项目样式
+*/
 
-/* 气泡操作按钮工具栏样式 */
-.bubble-toolbar {
-  display: flex;
-  gap: 8px;
-  position: absolute;
-  bottom: -35px; /* 与气泡底部距离10px */
-  left: 0;
-  padding-left: 10px;
-  box-sizing: border-box;
-  width: 200px;
-  z-index: 5;
-}
+/* ========== 基础样式导入 ========== */
+@import './base.css';
 
-/* 主内容区域样式 */
-.main-content {
-  flex: 1; /* 占据剩余所有空间 */
-  background: #18181c; /* 匹配主题背景色 */
-  display: flex;
-  flex-direction: column;
-  height: 100vh; /* 确保高度铺满视口 */
-}
+/* ========== 布局样式导入 ========== */
+@import './layout/sidebar.css';
+@import './layout/main-content.css';
 
-.chat-area {
-  flex: 1; /* 聊天气泡区域自动扩展 */
-  overflow-y: auto; /* 内容溢出时显示滚动条 */
-  padding: 20px;
-}
-/* 修改AI气泡为纯色背景 */
-.chat-bubble.ai {
-  background: linear-gradient(90deg, #63ff6b 0%, #549140 100%); /* 左侧更深绿色 */
-  color: #333; /* 深灰色文字确保可读性 */
-  border-bottom-left-radius: 4px;
-}
+/* ========== 组件样式导入 ========== */
+@import './components/chat-bubble.css';
+@import './components/input-bar.css';
+@import './components/states.css';
 
-/* 用户气泡 */
-.chat-bubble.user {
-  background: linear-gradient(90deg, #1976d2 0%, #64b5f6 100%); /* 渐变蓝色 */
-  color: white;
-  border-bottom-right-radius: 4px;
-  align-self: flex-end;
-  margin-left: auto;
-  margin-right: 0;
-  max-width: 70%;
-}
+/* ========== 工具样式导入 ========== */
+@import './utils/responsive.css';
+@import './utils/animations.css';
 
-/* 思考指示器 */
-.thinking-indicator {
-  display: flex;
-  gap: 4px;
-}
+/*
+样式文件结构说明：
 
-.dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: #666; /* 调整为深灰色 */
-  animation: pulse 1.5s infinite;
-}
+📁 styles/
+├── 📄 main.css (入口文件)
+├── 📄 base.css (基础样式和变量)
+├── 📁 layout/
+│   ├── 📄 sidebar.css (侧边栏布局)
+│   └── 📄 main-content.css (主内容区布局)
+├── 📁 components/
+│   ├── 📄 chat-bubble.css (聊天气泡组件)
+│   ├── 📄 input-bar.css (输入栏组件)
+│   └── 📄 states.css (加载和错误状态)
+└── 📁 utils/
+    ├── 📄 responsive.css (响应式设计)
+    └── 📄 animations.css (动画和交互)
 
-.dot:nth-child(2) {
-  animation-delay: 0.2s;
-}
-
-.dot:nth-child(3) {
-  animation-delay: 0.4s;
-}
-.loading {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  height: 100vh;
-  font-size: 24px;
-  color: #333;
-}
-
-/* 添加用户信息和退出按钮样式 */
-.user-info {
-  padding: 10px;
-  text-align: center;
-  color: #fff;
-  background-color: rgba(0, 0, 0, 0.2);
-  margin-bottom: 10px;
-}
-
-.logout-btn {
-  position: absolute;
-  bottom: 20px;
-  left: 20px;
-  right: 20px;
-  padding: 10px;
-  background-color: #ff4d4f;
-  color: rgb(39, 73, 109);
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-}
-
-.logout-btn:hover {
-  background-color: #ff7875;
-}
-
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(10px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
-@keyframes pulse {
-  0%, 100% { opacity: 0.5; }
-  50% { opacity: 1; }
-}
-
-/* 顶部功能标题样式，确保为白色 */
-.function-header h2 {
-  color: #fff !important;
-}
-
-/* 让底部按钮横向排列并有间距 */
-.sidebar-aligned-container {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-/* 缩小退出登录按钮 */
-.sidebar-logout-btn {
-  padding: 6px 14px;
-  font-size: 16px;
-  border-radius: 4px;
-}
-
-/* 缩小发送按钮 */
-.send-btn {
-  padding: 6px 16px;
-  font-size: 16px;
-  border-radius: 4px;
-}
-
-/* 聊天输入框字体大小提升 */
-.chat-input {
-  font-size: 18px;
-}
-.chat-input::placeholder {
-  font-size: 18px;
-}
+优势：
+✅ 模块化：每个文件职责单一，易于维护
+✅ 可复用：组件样式可以在不同页面复用
+✅ 易扩展：添加新功能只需新增对应CSS文件
+✅ 团队协作：不同开发者可以并行开发不同模块
+✅ 性能优化：可以按需加载特定模块的样式
+✅ 版本控制：修改某个功能只影响对应文件
+*/

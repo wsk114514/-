@@ -43,6 +43,13 @@ class EmptyDocQAChain:
     
     def invoke(self, input_data, *args, **kwargs):
         return {"answer": "不清楚文档内容，请上传文档内容后重试。"}
+    
+    async def astream(self, input_data, *args, **kwargs):
+        """异步流式处理方法"""
+        message = "不清楚文档内容，请上传文档内容后重试。"
+        # 逐字符返回，模拟流式输出
+        for char in message:
+            yield char
 
 def format_docs(docs):
     """格式化检索到的文档"""

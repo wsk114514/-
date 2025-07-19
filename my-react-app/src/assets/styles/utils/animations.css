@@ -1,0 +1,122 @@
+/*
+animations.css - 动画效果和交互样式
+包含：动画定义、过渡效果、可访问性、滚动条样式
+*/
+
+/* ========== 动画定义 ========== */
+@keyframes fadeIn {
+    from { 
+        opacity: 0; 
+        transform: translateY(10px); 
+    }
+    to { 
+        opacity: 1; 
+        transform: translateY(0); 
+    }
+}
+
+@keyframes pulse {
+    0%, 100% { 
+        opacity: 0.5; 
+        transform: scale(1);
+    }
+    50% { 
+        opacity: 1; 
+        transform: scale(1.1);
+    }
+}
+
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateX(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+@keyframes bounceIn {
+    0% {
+        opacity: 0;
+        transform: scale(0.8);
+    }
+    50% {
+        transform: scale(1.05);
+    }
+    100% {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+/* ========== 滚动条样式 ========== */
+.chat-area::-webkit-scrollbar {
+    width: 6px;
+}
+
+.chat-area::-webkit-scrollbar-track {
+    background: var(--bg-secondary);
+}
+
+.chat-area::-webkit-scrollbar-thumb {
+    background: var(--text-muted);
+    border-radius: 3px;
+}
+
+.chat-area::-webkit-scrollbar-thumb:hover {
+    background: #888;
+}
+
+/* ========== 可访问性样式 ========== */
+/* 聚焦样式 */
+.chat-input:focus,
+.send-btn:focus,
+.bubble-btn:focus,
+.menu-item:focus {
+    outline: 2px solid var(--accent-primary);
+    outline-offset: 2px;
+}
+
+/* 高对比度模式支持 */
+@media (prefers-contrast: high) {
+    .chat-bubble.ai {
+        background: #000;
+        color: var(--text-primary);
+        border: 2px solid var(--text-primary);
+    }
+    
+    .chat-bubble.user {
+        background: var(--text-primary);
+        color: #000;
+        border: 2px solid #000;
+    }
+}
+
+/* 减少动画偏好 */
+@media (prefers-reduced-motion: reduce) {
+    * {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+}
+
+/* ========== 交互效果 ========== */
+/* 悬停效果 */
+.hover-lift:hover {
+    transform: translateY(-2px);
+    transition: transform var(--transition-fast);
+}
+
+.hover-scale:hover {
+    transform: scale(1.02);
+    transition: transform var(--transition-fast);
+}
+
+/* 点击效果 */
+.click-effect:active {
+    transform: scale(0.98);
+    transition: transform 0.1s ease;
+}

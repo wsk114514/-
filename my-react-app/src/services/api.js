@@ -1,142 +1,322 @@
-// api.js
+// API 服务模块 - 统一处理前端与后端的通信
 
+// API 配置
+const API_CONFIG = {
+  BASE_URL: '',  // 使用相对路径，通过 Vite 代理转发到后端
+  TIMEOUT: 30000, // 30秒超时
+  RETRY_ATTEMPTS: 3,
+  RETRY_DELAY: 1000, // 1秒
+};
+
+// HTTP 状态码
+const HTTP_STATUS = {
+  OK: 200,
+  BAD_REQUEST: 400,
+  UNAUTHORIZED: 401,
+  FORBIDDEN: 403,
+  NOT_FOUND: 404,
+  INTERNAL_SERVER_ERROR: 500,
+};
+
+// 自定义错误类
+class APIError extends Error {
+  constructor(message, status, data) {
+    super(message);
+    this.name = 'APIError';
+    this.status = status;
+    this.data = data;
+  }
+}
+
+// 通用的 fetch 包装器
+async function fetchWithTimeout(url, options = {}, timeout = API_CONFIG.TIMEOUT) {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), timeout);
+
+  // 构建完整的URL
+  const fullUrl = url.startsWith('http') ? url : `${API_CONFIG.BASE_URL}${url}`;
+
+  try {
+    const response = await fetch(fullUrl, {
+      ...options,
+      signal: controller.signal,
+    });
+    clearTimeout(timeoutId);
+    return response;
+  } catch (error) {
+    clearTimeout(timeoutId);
+    if (error.name === 'AbortError') {
+      throw new APIError('请求超时，请稍后再试', 0);
+    }
+    throw error;
+  }
+}
+
+// 重试机制
+async function fetchWithRetry(url, options = {}, maxAttempts = API_CONFIG.RETRY_ATTEMPTS) {
+  let lastError;
+
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    try {
+      const response = await fetchWithTimeout(url, options);
+      
+      if (response.ok) {
+        return response;
+      }
+      
+      // 如果是客户端错误（4xx），不重试
+      if (response.status >= 400 && response.status < 500) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new APIError(
+          errorData.detail || `请求失败 (${response.status})`,
+          response.status,
+          errorData
+        );
+      }
+      
+      throw new APIError(`服务器错误 (${response.status})`, response.status);
+    } catch (error) {
+      lastError = error;
+      
+      if (error instanceof APIError && error.status < 500) {
+        throw error; // 不重试客户端错误
+      }
+      
+      if (attempt < maxAttempts) {
+        await new Promise(resolve => 
+          setTimeout(resolve, API_CONFIG.RETRY_DELAY * attempt)
+        );
+      }
+    }
+  }
+
+  throw lastError;
+}
+
+// 标准聊天 API（已废弃，但保留兼容性）
 export async function getResponse(message, function_type) {
-    try {
-        const response = await fetch('/app', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                message: message,
-                function: function_type
-            }),
-        });
+  try {
+    const response = await fetchWithRetry('/app', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        message: message,
+        function: function_type
+      }),
+    });
 
-        const data = await response.json();
-
-        if (!response.ok) {
-            throw new Error(data.detail || '网络错误，请稍后再试');
-        }
-
-        return data.response || '抱歉，我没有理解您的问题。';
-    } catch (error) {
-        // 捕获网络错误或JSON解析错误
-        throw new Error(error.message || '网络请求失败，请检查后端服务是否正常运行');
+    const data = await response.json();
+    return data.response || '抱歉，我没有理解您的问题。';
+  } catch (error) {
+    if (error instanceof APIError) {
+      throw error;
     }
+    throw new APIError(error.message || '网络请求失败，请检查后端服务', 0);
+  }
 }
 
-// 流式响应API
+// 流式响应 API
 export async function getResponseStream(message, function_type, onChunk) {
+  if (!onChunk || typeof onChunk !== 'function') {
+    throw new APIError('onChunk 回调函数是必需的', 0);
+  }
+
+  try {
+    const response = await fetchWithRetry('/app/stream', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        message: message,
+        function: function_type
+      }),
+    });
+
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = '';
+
+    // 流式处理配置
+    const streamConfig = {
+      charDelay: { min: 20, max: 40 }, // 字符间延迟
+      chunkDelay: 30, // 块间延迟
+      batchSize: 3, // 批处理大小
+    };
+
+    // 批处理队列
+    let chunkQueue = [];
+    let isProcessing = false;
+
+    // 处理字符队列
+    const processCharQueue = async (chars) => {
+      for (let i = 0; i < chars.length; i++) {
+        onChunk(chars[i]);
+        
+        // 为每个字符添加随机延迟
+        if (i < chars.length - 1) {
+          const delay = Math.random() * 
+            (streamConfig.charDelay.max - streamConfig.charDelay.min) + 
+            streamConfig.charDelay.min;
+          await new Promise(resolve => setTimeout(resolve, delay));
+        }
+      }
+    };
+
+    // 处理块队列
+    const processQueue = async () => {
+      if (isProcessing) return;
+      isProcessing = true;
+
+      while (chunkQueue.length > 0) {
+        const batch = chunkQueue.splice(0, streamConfig.batchSize);
+        const batchText = batch.join('');
+        
+        await processCharQueue(batchText);
+        
+        // 批次间延迟
+        if (chunkQueue.length > 0) {
+          await new Promise(resolve => setTimeout(resolve, streamConfig.chunkDelay));
+        }
+      }
+
+      isProcessing = false;
+    };
+
     try {
-        const response = await fetch('/app/stream', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                message: message,
-                function: function_type
-            }),
-        });
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
 
-        if (!response.ok) {
-            throw new Error('网络错误，请稍后再试');
-        }
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split('\n');
+        buffer = lines.pop() || '';
 
-        const reader = response.body.getReader();
-        const decoder = new TextDecoder();
-        let buffer = '';
+        for (const line of lines) {
+          if (line.startsWith('data: ')) {
+            const data = line.slice(6);
 
-        // 添加延迟队列机制
-        const chunkQueue = [];
-        let isProcessing = false;
-
-        // 处理队列中的块
-        const processQueue = async () => {
-            if (isProcessing || chunkQueue.length === 0) return;
-            
-            isProcessing = true;
-            
-            while (chunkQueue.length > 0) {
-                const chunk = chunkQueue.shift();
-                
-                // 按字符逐个输出，增加丝滑感
-                for (const char of chunk) {
-                    onChunk(char);
-                    // 每个字符之间添加30-50ms的延迟
-                    await new Promise(resolve => setTimeout(resolve, Math.random() * 20 + 30));
-                }
-                
-                // 每个chunk之间稍微停顿
-                await new Promise(resolve => setTimeout(resolve, 50));
+            if (data === '[DONE]') {
+              // 等待队列处理完成
+              while (chunkQueue.length > 0 || isProcessing) {
+                await new Promise(resolve => setTimeout(resolve, 10));
+              }
+              return;
             }
-            
-            isProcessing = false;
-        };
 
-        try {
-            while (true) {
-                const { done, value } = await reader.read();
-                if (done) break;
-
-                buffer += decoder.decode(value, { stream: true });
-                const lines = buffer.split('\n');
-
-                // 保留最后一行（可能不完整）
-                buffer = lines.pop() || '';
-
-                for (const line of lines) {
-                    if (line.startsWith('data: ')) {
-                        const data = line.slice(6); // 去掉 "data: " 前缀
-
-                        if (data === '[DONE]') {
-                            // 确保队列处理完毕
-                            while (chunkQueue.length > 0 || isProcessing) {
-                                await new Promise(resolve => setTimeout(resolve, 10));
-                            }
-                            return; // 流式响应结束
-                        }
-
-                        try {
-                            const parsed = JSON.parse(data);
-                            if (parsed.content) {
-                                chunkQueue.push(parsed.content);
-                                processQueue(); // 不等待，让队列异步处理
-                            } else if (parsed.error) {
-                                throw new Error(parsed.error);
-                            }
-                        } catch (e) {
-                            console.error("解析响应数据失败:", e);
-                        }
-                    }
-                }
+            try {
+              const parsed = JSON.parse(data);
+              if (parsed.content) {
+                chunkQueue.push(parsed.content);
+                processQueue(); // 异步处理队列
+              } else if (parsed.error) {
+                throw new APIError(parsed.error, 0);
+              }
+            } catch (parseError) {
+              console.error("解析响应数据失败:", parseError);
             }
-        } finally {
-            reader.releaseLock();
+          }
         }
-    } catch (error) {
-        throw new Error(error.message || '流式请求失败，请检查后端服务是否正常运行');
+      }
+    } finally {
+      if (reader) {
+        reader.releaseLock();
+      }
     }
+  } catch (error) {
+    if (error instanceof APIError) {
+      throw error;
+    }
+    throw new APIError(error.message || '流式请求失败', 0);
+  }
 }
 
-// api.js
+// 清除记忆 API
 export async function clearMemory() {
-    try {
-        const response = await fetch('http://localhost:8000/memory/clear', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-        });
+  try {
+    const response = await fetchWithRetry('/memory/clear', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
 
-        if (!response.ok) {
-            throw new Error('清除记忆失败');
-        }
-
-        return await response.json();
-    } catch (error) {
-        console.error('清除记忆失败:', error);
-        throw error;
+    const result = await response.json();
+    return result;
+  } catch (error) {
+    // 如果是 404 错误，说明后端可能没有这个接口
+    if (error instanceof APIError && error.status === 404) {
+      console.warn('清除记忆接口不可用，可能后端未实现此功能');
+      return { message: '清除记忆接口不可用' };
     }
+    
+    if (error instanceof APIError) {
+      throw error;
+    }
+    throw new APIError('清除记忆失败', 0);
+  }
 }
+
+// 用户认证 API
+export async function loginUser(credentials) {
+  try {
+    const response = await fetchWithRetry('/login', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(credentials),
+    });
+
+    return await response.json();
+  } catch (error) {
+    if (error instanceof APIError) {
+      throw error;
+    }
+    throw new APIError('登录失败', 0);
+  }
+}
+
+export async function registerUser(userData) {
+  try {
+    const response = await fetchWithRetry('/register', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(userData),
+    });
+
+    return await response.json();
+  } catch (error) {
+    if (error instanceof APIError) {
+      throw error;
+    }
+    throw new APIError('注册失败', 0);
+  }
+}
+
+// 文件上传 API
+export async function uploadFile(file) {
+  try {
+    const formData = new FormData();
+    formData.append('file', file);
+
+    const response = await fetchWithRetry('/upload', {
+      method: 'POST',
+      body: formData,
+    });
+
+    return await response.json();
+  } catch (error) {
+    if (error instanceof APIError) {
+      throw error;
+    }
+    throw new APIError('文件上传失败', 0);
+  }
+}
+
+// 导出错误类供外部使用
+export { APIError };

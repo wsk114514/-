@@ -1,0 +1,133 @@
+/*
+chat-bubble.css - 聊天气泡组件样式
+包含：气泡基础样式、AI和用户气泡、操作工具栏、思考指示器
+*/
+
+/* ========== 聊天气泡基础样式 ========== */
+.chat-bubble {
+    max-width: 72%;
+    width: fit-content;
+    padding: var(--spacing-md) 18px;
+    border-radius: var(--border-radius-xl);
+    font-size: var(--font-size-3xl);
+    margin-bottom: var(--spacing-xs);
+    word-break: break-word;
+    box-shadow: var(--shadow-light);
+    position: relative;
+    animation: fadeIn 0.3s ease-out;
+}
+
+/* AI气泡样式 */
+.chat-bubble.ai {
+    background: var(--gradient-ai);
+    color: #333;
+    border-bottom-left-radius: var(--border-radius-sm);
+    align-self: flex-start;
+}
+
+/* 用户气泡样式 */
+.chat-bubble.user {
+    background: var(--gradient-user);
+    color: var(--text-primary);
+    border-bottom-right-radius: var(--border-radius-sm);
+    align-self: flex-end;
+    margin-left: auto;
+    margin-right: 0;
+    max-width: 75%;
+}
+
+/* 临时消息样式 */
+.chat-bubble.temp {
+    opacity: 0.7;
+}
+
+/* 气泡内容区域 */
+.bubble-content {
+    line-height: 1.4;
+}
+
+/* 气泡时间戳 */
+.bubble-timestamp {
+    font-size: var(--font-size-xs);
+    color: rgba(255, 255, 255, 0.6);
+    margin-top: var(--spacing-xs);
+    text-align: right;
+}
+
+/* ========== 气泡操作工具栏 ========== */
+.bubble-toolbar {
+    display: flex;
+    gap: var(--spacing-sm);
+    position: absolute;
+    bottom: -32px;
+    left: 0;
+    padding-left: 10px;
+    box-sizing: border-box;
+    width: auto;
+    max-width: 200px;
+    transform: none;
+    z-index: 10;
+    background: transparent;
+    pointer-events: auto;
+}
+
+.bubble-btn {
+    padding: var(--spacing-xs) var(--spacing-md);
+    font-size: var(--font-size-sm);
+    border-radius: var(--border-radius-lg);
+    border: none;
+    background: #2a2a2e;
+    color: var(--text-secondary);
+    box-shadow: var(--shadow-medium);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    opacity: 0.8;
+    white-space: nowrap;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: auto;
+    font-weight: 500;
+}
+
+.bubble-btn:hover {
+    background: var(--accent-primary);
+    color: var(--text-primary);
+    opacity: 1;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(79, 94, 246, 0.3);
+}
+
+.bubble-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+/* ========== 思考指示器 ========== */
+.thinking-indicator {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+}
+
+.thinking-text {
+    margin-left: var(--spacing-sm);
+}
+
+.dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--text-muted);
+    animation: pulse 1.5s infinite;
+}
+
+.dot:nth-child(2) {
+    animation-delay: 0.2s;
+}
+
+.dot:nth-child(3) {
+    animation-delay: 0.4s;
+}

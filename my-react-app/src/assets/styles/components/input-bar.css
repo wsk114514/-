@@ -1,0 +1,83 @@
+/*
+input-bar.css - 输入区域组件样式
+包含：输入栏容器、聊天输入框、发送按钮、上传按钮
+*/
+
+/* ========== 输入栏容器 ========== */
+.input-bar-container {
+    padding: var(--spacing-lg) var(--spacing-3xl);
+    background: var(--bg-primary);
+    border-top: 1px solid var(--border-color);
+}
+
+.input-bar-inner {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-md);
+    width: 100%;
+    padding: 10px 0;
+}
+
+/* ========== 聊天输入框 ========== */
+.chat-input {
+    flex: 1;
+    height: 60px;
+    padding: var(--spacing-md) 28px !important;
+    border-radius: var(--border-radius-md);
+    border: none;
+    background: var(--bg-tertiary);
+    color: var(--text-primary);
+    font-size: var(--font-size-xl);
+    outline: none;
+    min-width: 0;
+    box-sizing: border-box;
+    transition: background var(--transition-fast);
+}
+
+.chat-input:focus {
+    background: #2a2a2e;
+}
+
+.chat-input::placeholder {
+    color: var(--text-muted);
+    font-size: var(--font-size-xl);
+}
+
+.chat-input:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+/* ========== 按钮样式 ========== */
+.send-btn {
+    height: 60px;
+    width: 180px; 
+    padding: var(--spacing-md) 0;
+    border-radius: var(--border-radius-md);
+    border: none;
+    background: var(--accent-primary);
+    color: var(--text-primary);
+    font-size: var(--font-size-lg);
+    cursor: pointer;
+    transition: background var(--transition-fast);
+    white-space: nowrap;
+}
+
+.send-btn:hover:not(:disabled) {
+    background: var(--accent-secondary);
+}
+
+.send-btn:disabled {
+    background: var(--text-muted);
+    cursor: not-allowed;
+}
+
+/* 上传按钮特殊样式 */
+.upload-btn {
+    background: var(--bg-quaternary);
+    min-width: 120px;
+}
+
+.upload-btn:hover:not(:disabled) {
+    background: #454555;
+}

@@ -1,0 +1,111 @@
+/*
+base.css - 基础样式和全局变量
+包含：CSS变量定义、基础重置样式、全局字体设置
+*/
+
+/* ========== CSS变量定义 ========== */
+:root {
+    /* 颜色变量 */
+    --bg-primary: #18181c;
+    --bg-secondary: #23232a;
+    --bg-tertiary: #252529;
+    --bg-quaternary: #353542;
+    
+    --text-primary: #fff;
+    --text-secondary: #bdbdbd;
+    --text-muted: #666;
+    
+    --accent-primary: #4f5ef6;
+    --accent-secondary: #3a47c9;
+    --accent-danger: #ff4d4f;
+    --accent-danger-hover: #ff7875;
+    
+    --gradient-ai: linear-gradient(90deg, #63ff6b 0%, #549140 100%);
+    --gradient-user: linear-gradient(90deg, #1976d2 0%, #64b5f6 100%);
+    --gradient-danger: linear-gradient(135deg, #ff6b6b, #ee5a52);
+    
+    --border-color: #333;
+    --shadow-light: 0 2px 6px rgba(0, 0, 0, 0.08);
+    --shadow-medium: 0 4px 12px rgba(0, 0, 0, 0.15);
+    --shadow-heavy: 0 6px 20px rgba(0, 0, 0, 0.3);
+    
+    /* 尺寸变量 */
+    --sidebar-width: 240px;
+    --border-radius-sm: 6px;
+    --border-radius-md: 8px;
+    --border-radius-lg: 12px;
+    --border-radius-xl: 14px;
+    
+    /* 间距变量 */
+    --spacing-xs: 4px;
+    --spacing-sm: 8px;
+    --spacing-md: 12px;
+    --spacing-lg: 16px;
+    --spacing-xl: 20px;
+    --spacing-2xl: 24px;
+    --spacing-3xl: 30px;
+    
+    /* 字体变量 */
+    --font-size-xs: 0.7em;
+    --font-size-sm: 0.75em;
+    --font-size-base: 1em;
+    --font-size-lg: 1.1em;
+    --font-size-xl: 1.2em;
+    --font-size-2xl: 1.4em;
+    --font-size-3xl: 1.5em;
+    --font-size-4xl: 1.8em;
+    --font-size-5xl: 2.0em;
+    
+    /* 过渡变量 */
+    --transition-fast: 0.2s ease;
+    --transition-normal: 0.3s ease;
+    --transition-slow: 0.5s ease;
+}
+
+/* ========== 基础重置样式 ========== */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    padding: 0;
+    font-family: 'Segoe UI', 'Arial', sans-serif;
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    height: 100vh;
+    overflow: hidden;
+    line-height: 1.6;
+}
+
+/* 主容器，左右分栏布局 */
+.container {
+    display: flex;
+    height: 100vh;
+    width: 100vw;
+    margin: 0;
+    padding: 0;
+}
+
+/* ========== 通用实用类 ========== */
+.text-primary { color: var(--text-primary); }
+.text-secondary { color: var(--text-secondary); }
+.text-muted { color: var(--text-muted); }
+
+.bg-primary { background: var(--bg-primary); }
+.bg-secondary { background: var(--bg-secondary); }
+
+.flex { display: flex; }
+.flex-col { flex-direction: column; }
+.flex-1 { flex: 1; }
+.items-center { align-items: center; }
+.justify-center { justify-content: center; }
+
+.rounded-sm { border-radius: var(--border-radius-sm); }
+.rounded-md { border-radius: var(--border-radius-md); }
+.rounded-lg { border-radius: var(--border-radius-lg); }
+
+.transition-fast { transition: var(--transition-fast); }
+.transition-normal { transition: var(--transition-normal); }

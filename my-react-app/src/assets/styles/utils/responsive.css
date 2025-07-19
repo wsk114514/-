@@ -1,0 +1,102 @@
+/*
+responsive.css - 响应式设计样式
+包含：媒体查询、移动端适配、平板适配
+*/
+
+/* ========== 平板和小屏设备 ========== */
+@media (max-width: 768px) {
+    .container {
+        flex-direction: column;
+    }
+    
+    .sidebar {
+        flex-direction: row;
+        width: 100%;
+        height: 60px;
+        padding: 0 var(--spacing-md);
+        align-items: center;
+        justify-content: space-between;
+    }
+    
+    .logo {
+        margin-bottom: 0;
+        font-size: var(--font-size-3xl);
+    }
+    
+    .menu {
+        flex-direction: row;
+        gap: var(--spacing-sm);
+        font-size: var(--font-size-base);
+    }
+    
+    .menu-item {
+        padding: var(--spacing-xs) var(--spacing-sm);
+        width: auto;
+    }
+    
+    .main-content {
+        padding-top: 0;
+    }
+    
+    .function-header,
+    .chat-area,
+    .input-bar-container {
+        padding-left: var(--spacing-md);
+        padding-right: var(--spacing-md);
+    }
+    
+    .chat-bubble {
+        font-size: var(--font-size-xl);
+        max-width: 85%;
+    }
+    
+    .input-bar-inner {
+        flex-direction: column;
+        gap: var(--spacing-sm);
+    }
+    
+    .chat-input {
+        width: 100%;
+        font-size: 16px; /* 防止iOS缩放 */
+    }
+    
+    .send-btn, .upload-btn {
+        width: 100%;
+    }
+}
+
+/* ========== 手机设备 ========== */
+@media (max-width: 480px) {
+    .sidebar {
+        height: 50px;
+        padding: 0 var(--spacing-sm);
+    }
+    
+    .logo {
+        font-size: var(--font-size-xl);
+    }
+    
+    .menu {
+        gap: var(--spacing-xs);
+    }
+    
+    .function-header {
+        padding: var(--spacing-md);
+        flex-direction: column;
+        align-items: flex-start;
+        gap: var(--spacing-sm);
+    }
+    
+    .chat-stats {
+        align-self: flex-end;
+    }
+    
+    .chat-area {
+        padding: var(--spacing-md);
+        gap: var(--spacing-xl);
+    }
+    
+    .input-bar-container {
+        padding: var(--spacing-md);
+    }
+}

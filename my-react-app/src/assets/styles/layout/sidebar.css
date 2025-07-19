@@ -1,0 +1,129 @@
+/*
+sidebar.css - 侧边栏布局样式
+包含：侧边栏容器、Logo、菜单、用户信息、退出按钮等
+*/
+
+/* ========== 侧边栏主容器 ========== */
+.sidebar {
+    width: var(--sidebar-width);
+    background: var(--bg-secondary);
+    display: flex;
+    flex-direction: column;
+    padding: var(--spacing-xl) 0;
+    box-shadow: 2px 0 8px rgba(0, 0, 0, 0.1);
+    position: relative;
+    z-index: 10;
+    height: 100vh;
+    
+}
+
+/* ========== Logo样式 ========== */
+.logo {
+    font-size: var(--font-size-5xl);
+    font-weight: bold;
+    color: var(--text-primary);
+    text-align: center;
+    margin-bottom: var(--spacing-2xl);
+    letter-spacing: 1px;
+}
+
+/* ========== 用户信息样式 ========== */
+.user-info {
+    padding: 10px;
+    text-align: center;
+    color: var(--text-primary);
+    background-color: rgba(0, 0, 0, 0.2);
+    margin-bottom: 10px;
+    border-radius: var(--border-radius-md);
+    margin: 0 var(--spacing-lg) var(--spacing-lg);
+}
+
+/* ========== 导航菜单样式 ========== */
+.menu {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-md);
+    align-items: center;
+    font-size: var(--font-size-2xl);
+    text-align: center;
+}
+
+.menu-item {
+    color: var(--text-secondary);
+    text-decoration: none;
+    padding: var(--spacing-md) var(--spacing-xl);
+    border-radius: var(--border-radius-md);
+    transition: all var(--transition-fast);
+    width: 85%;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-weight: 500;
+}
+
+.menu-item:hover {
+    background: var(--accent-primary);
+    color: var(--text-primary);
+    transform: translateX(2px);
+    box-shadow: 0 2px 8px rgba(79, 94, 246, 0.3);
+    text-decoration: None;
+}
+
+.menu-icon {
+    font-size: 1.2em;
+}
+
+/* ========== 最近聊天记录按钮区样式 ========== */
+.recent-chats {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-top: 100px;
+    align-items: center;
+}
+
+.recent-chat-btn {
+    width: 160px;
+    padding: 10px 0;
+    border-radius: var(--border-radius-md);
+    border: none;
+    background: var(--bg-quaternary);
+    color: var(--text-secondary);
+    font-size: var(--font-size-3xl);
+    cursor: pointer;
+    transition: background var(--transition-fast), color var(--transition-fast);
+}
+
+.recent-chat-btn:hover {
+    background: var(--accent-primary);
+    color: var(--text-primary);
+}
+
+/* ========== 侧边栏底部样式 ========== */
+.sidebar-footer {
+    margin-top: auto;
+    margin-bottom: auto;
+    padding: var(--spacing-lg) var(--spacing-3xl) var(--spacing-3xl);  /* 调整左右内边距与输入栏对齐 */
+}
+
+.logout-btn {
+    width: 100%;
+    height: auto;
+    padding: 14px var(--spacing-lg);
+    background-color: var(--accent-danger);
+    color: var(--text-primary);
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+    font-size: var(--font-size-base);
+    font-weight: 600;
+    transition: all var(--transition-normal);
+    box-shadow: 0 3px 8px rgba(255, 77, 79, 0.3);
+    letter-spacing: 0.5px;
+}
+
+.logout-btn:hover {
+    background-color: var(--accent-danger-hover);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(255, 77, 79, 0.4);
+}

@@ -1,102 +1,103 @@
-import { useState ,useRef } from 'react';
+import React, { useState, useRef, useCallback, useMemo } from 'react';
 import { useFunctionContext } from '../context/FunctionContext';
-import { getResponse, getResponseStream } from '../services/api';
+import { getResponseStream } from '../services/api';
 
 const InputBar = () => {
   const [input, setInput] = useState('');
-
-  const [uploading,setuploading]=useState(false);
-  const fileInputRef=useRef(null);
+  const [uploading, setUploading] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const fileInputRef = useRef(null);
   
-  const { currentFunctionType, setMessages } = useFunctionContext();
+  const { currentFunctionType, addMessage, setMessages, isLoading: contextLoading } = useFunctionContext();
   
-  const showUploadButton=currentFunctionType=="doc_qa";
+  // 是否显示上传按钮
+  const showUploadButton = useMemo(() => 
+    currentFunctionType === 'doc_qa', 
+    [currentFunctionType]
+  );
 
-  //处理文件上传
-  const handleFileUpload =async (e)=>{
-    const file =e.target.files[0];
-    if(!file)
+  // 接受的文件类型
+  const acceptedFileTypes = useMemo(() => [
+    '.pdf', '.doc', '.docx', '.txt'
+  ], []);
 
-      return;
+  // 处理文件上传
+  const handleFileUpload = useCallback(async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
 
-    // 设置上传状态
-    setuploading(true);
+    setUploading(true);
+    
     try {
-      const formData= new FormData();
+      const formData = new FormData();
       formData.append('file', file);
+      
       const response = await fetch('/upload', {
         method: 'POST',
         body: formData,
       });
+      
       if (!response.ok) {
-        throw new Error('文件上传失败');
+        throw new Error(`文件上传失败: ${response.status}`);
       }
-      setMessages(prev => [
-        ...prev,
-        {
-          content: '文件上传成功！',
-          isUser: false,
-          id: `upload-${Date.now()}`
-        }
-      ]);
+      
+      const result = await response.json();
+      
+      addMessage({
+        content: `文件 "${file.name}" 上传成功！`,
+        isUser: false,
+        id: `upload-${Date.now()}`
+      });
+      
     } catch (error) {
       console.error('文件上传失败:', error);
-      setMessages(prev => [
-        ...prev,
-        {
-          content: '文件上传失败，请重试。',
-          isUser: false,
-          id: `upload-error-${Date.now()}`
-        }
-      ]);
-    }
-    finally {
-      setuploading(false);
+      
+      addMessage({
+        content: `文件上传失败：${error.message}`,
+        isUser: false,
+        id: `upload-error-${Date.now()}`
+      });
+    } finally {
+      setUploading(false);
       if (fileInputRef.current) {
-        fileInputRef.current.value = ''; // 清空文件输入
+        fileInputRef.current.value = '';
       }
     }
-  };
+  }, [addMessage]);
+
   // 触发文件上传
-  const triggerFileUpload = () => {
-    if (fileInputRef.current) {
+  const triggerFileUpload = useCallback(() => {
+    if (fileInputRef.current && !uploading) {
       fileInputRef.current.click();
     }
-  };
+  }, [uploading]);
 
   // 发送消息的函数
-  const sendMessage = async () => {
+  const sendMessage = useCallback(async () => {
     const message = input.trim();
-    if (!message) return;
+    if (!message || isLoading || contextLoading) return;
 
-    // 生成唯一ID
-    const userMsgId = Date.now().toString();
-    const aiMsgId = (Date.now() + 1).toString();
+    const userMsgId = `user-${Date.now()}`;
+    const aiMsgId = `ai-${Date.now()}`;
     
     // 添加用户消息
-    setMessages(prev => [
-      ...prev, 
-      { 
-        content: message, 
-        isUser: true, 
-        id: userMsgId
-      }
-    ]);
+    addMessage({
+      content: message,
+      isUser: true,
+      id: userMsgId
+    });
     
     setInput('');
+    setIsLoading(true);
     
     // 添加AI思考中消息
-    setMessages(prev => [
-      ...prev, 
-      { 
-        content: '正在思考...', 
-        isUser: false, 
-        id: aiMsgId
-      }
-    ]);
+    addMessage({
+      content: '正在思考...',
+      isUser: false,
+      id: aiMsgId
+    });
 
     try {
-      // 使用流式响应
       let aiResponse = '';
       
       await getResponseStream(message, currentFunctionType, (chunk) => {
@@ -113,14 +114,28 @@ const InputBar = () => {
     } catch (error) {
       console.error('发送消息失败:', error);
       
-      // 更新错误消息
       setMessages(prev => prev.map(msg => 
         msg.id === aiMsgId 
           ? { ...msg, content: '抱歉，发生错误，请稍后再试。' } 
           : msg
       ));
+    } finally {
+      setIsLoading(false);
     }
-  };
+  }, [input, isLoading, contextLoading, addMessage, currentFunctionType]);
+
+  // 处理键盘事件
+  const handleKeyDown = useCallback((e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      sendMessage();
+    }
+  }, [sendMessage]);
+
+  // 处理输入变化
+  const handleInputChange = useCallback((e) => {
+    setInput(e.target.value);
+  }, []);
 
   return (
     <div className="input-bar-inner">
@@ -129,9 +144,11 @@ const InputBar = () => {
         className="chat-input"
         placeholder="请输入内容..."
         value={input}
-        onChange={(e) => setInput(e.target.value)}
-        onKeyDown={(e) => e.key === 'Enter' && sendMessage()}
+        onChange={handleInputChange}
+        onKeyDown={handleKeyDown}
+        disabled={isLoading || contextLoading}
       />
+      
       {showUploadButton && (
         <>
           <input
@@ -139,20 +156,27 @@ const InputBar = () => {
             ref={fileInputRef}
             style={{ display: 'none' }}
             onChange={handleFileUpload}
-            accept=".pdf,.doc,.docx,.txt"
-            disabled={uploading}
+            accept={acceptedFileTypes.join(',')}
+            disabled={uploading || isLoading}
           />
           <button 
             className="send-btn upload-btn"
             onClick={triggerFileUpload}
-            disabled={uploading}
+            disabled={uploading || isLoading}
+            title="上传文档文件"
           >
-            {uploading ? '上传中...' : '上传文件'}
+            {uploading ? '上传中...' : '📁 上传'}
           </button>
         </>
       )}
-      <button className="send-btn" onClick={sendMessage}>
-        发送
+      
+      <button 
+        className="send-btn" 
+        onClick={sendMessage}
+        disabled={!input.trim() || isLoading || contextLoading}
+        title="发送消息"
+      >
+        {isLoading || contextLoading ? '发送中...' : '📤 发送'}
       </button>
     </div>
   );

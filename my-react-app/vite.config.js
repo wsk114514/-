@@ -15,7 +15,7 @@ export default defineConfig({
       '/login': 'http://localhost:8000',
       '/register': 'http://localhost:8000',
       '/app': 'http://localhost:8000',
-      '/clear-memory': 'http://localhost:8000',
+      '/memory': 'http://localhost:8000',  // 匹配 /memory/clear 路径
       '/upload': 'http://localhost:8000',
     }
   }
