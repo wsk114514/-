@@ -21,7 +21,7 @@ chat-bubble.css - 聊天气泡组件样式
 .chat-bubble.ai {
     background: var(--gradient-ai);
     color: var(--text-primary);
-    font-size: var(--font-size-xl);
+    font-size: var(--font-size-lg);
     border-bottom-left-radius: var(--border-radius-sm);
     align-self: flex-start;
 }
@@ -30,7 +30,7 @@ chat-bubble.css - 聊天气泡组件样式
 .chat-bubble.user {
     background: var(--gradient-user);
     color: var(--text-primary);
-    font-size: var(--font-size-xl);
+    font-size: var(--font-size-lg);
     border-bottom-right-radius: var(--border-radius-sm);
     align-self: flex-end;
     margin-left: auto;
