@@ -42,8 +42,10 @@ const ChatBubble = ({ content, isUser, messageId, temp }) => {
       );
     }
     
+    // 移除###标记
+    const contentWithoutHashes = content.replace(/###/g, '');
     // 移除**标记
-    const contentWithoutBold = content.replace(/\*\*/g, '');
+    const contentWithoutBold = contentWithoutHashes.replace(/\*\*/g, '');
     
     // 处理换行
     return contentWithoutBold.split('\n').map((line, index) => (
