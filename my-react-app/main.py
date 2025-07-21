@@ -191,13 +191,7 @@ async def chat_stream_endpoint(req: ChatRequest):
 async def clear_memory_endpoint(function_type: str = "current"):
     """清除记忆端点"""
     try:
-        if function_type == "all":
-            # 清除所有功能的记忆
-            from llm_chain import clear_all_memories
-            clear_all_memories()
-            logger.info("所有记忆已清除")
-            return SuccessResponse(message="所有记忆已清除")
-        elif function_type == "current":
+        if function_type == "current":
             # 向后兼容：清除默认系统记忆
             system = get_llm_system("general")
             clear_memory(system)
@@ -220,16 +214,10 @@ async def clear_memory_endpoint(function_type: str = "current"):
 async def clear_function_memory_endpoint(function_type: str):
     """清除指定功能记忆端点"""
     try:
-        if function_type == "all":
-            from llm_chain import clear_all_memories
-            clear_all_memories()
-            logger.info("所有记忆已清除")
-            return SuccessResponse(message="所有记忆已清除")
-        else:
-            from llm_chain import clear_memory_for_function
-            clear_memory_for_function(function_type)
-            logger.info(f"功能 {function_type} 的记忆已清除")
-            return SuccessResponse(message=f"功能 {function_type} 的记忆已清除")
+        from llm_chain import clear_memory_for_function
+        clear_memory_for_function(function_type)
+        logger.info(f"功能 {function_type} 的记忆已清除")
+        return SuccessResponse(message=f"功能 {function_type} 的记忆已清除")
     except Exception as e:
         logger.error(f"清除记忆失败: {str(e)}")
         return JSONResponse(

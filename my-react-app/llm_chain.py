@@ -22,7 +22,7 @@ def init_llm():
         if not API_KEY:
             raise ValueError("DASHSCOPE_API_KEY 环境变量未设置")
         
-        llm = ChatTongyi(name="qwen-plus", api_key=API_KEY)
+        llm = ChatTongyi(name="qwen-plus", api_key=API_KEY, temperature=0.8, top_p=0.9)
         logger.info("成功初始化大语言模型")
         return llm
     except Exception as e:
@@ -68,26 +68,6 @@ def clear_memory_for_function(function_type):
         except Exception as e:
             logger.warning(f"清除功能 {function_type} 的文档数据时出现问题: {e}")
     
-def clear_all_memories():
-    """清除所有功能的记忆"""
-    global memory_by_function, doc_qa_chain
-    for function_type in memory_by_function:
-        if memory_by_function[function_type] is not None:
-            memory_by_function[function_type].clear()
-    
-    if doc_qa_chain and hasattr(doc_qa_chain, 'memory'):
-        doc_qa_chain.memory.clear()
-        logger.info("文档问答记忆已清除")
-    
-    # 清除所有文档数据（向量存储和上传文件）
-    try:
-        clear_all_document_data()
-        logger.info("文档数据清除操作已完成")
-    except Exception as e:
-        logger.warning(f"清除文档数据时出现问题: {e}")
-    
-    logger.info("所有功能的记忆已清除")
-
 class EmptyDocQAChain:
     """空文档问答链（当没有文档时使用）"""
     def __call__(self, *args, **kwargs):

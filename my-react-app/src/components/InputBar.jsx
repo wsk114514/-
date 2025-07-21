@@ -7,8 +7,15 @@ const InputBar = () => {
   const [uploading, setUploading] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const fileInputRef = useRef(null);
+  const abortControllerRef = useRef(null);
   
-  const { currentFunctionType, addMessage, setMessages, isLoading: contextLoading } = useFunctionContext();
+  const { 
+    currentFunctionType, 
+    addMessage, 
+    setMessages, 
+    isLoading: contextLoading,
+    abortResponse
+  } = useFunctionContext();
   
   // 是否显示上传按钮
   const showUploadButton = useMemo(() => 
@@ -100,6 +107,9 @@ const InputBar = () => {
     try {
       let aiResponse = '';
       
+      // 创建新的 AbortController
+      abortControllerRef.current = new AbortController();
+      
       await getResponseStream(message, currentFunctionType, (chunk) => {
         aiResponse += chunk;
         
@@ -109,20 +119,39 @@ const InputBar = () => {
             ? { ...msg, content: aiResponse } 
             : msg
         ));
-      });
+      }, abortControllerRef.current);
       
     } catch (error) {
       console.error('发送消息失败:', error);
       
-      setMessages(prev => prev.map(msg => 
-        msg.id === aiMsgId 
-          ? { ...msg, content: '抱歉，发生错误，请稍后再试。' } 
-          : msg
-      ));
+      // 检查是否是用户主动中止
+      if (abortControllerRef.current && abortControllerRef.current.signal.aborted) {
+        setMessages(prev => prev.map(msg => 
+          msg.id === aiMsgId 
+            ? { ...msg, content: '已停止生成。' } 
+            : msg
+        ));
+      } else {
+        setMessages(prev => prev.map(msg => 
+          msg.id === aiMsgId 
+            ? { ...msg, content: '抱歉，发生错误，请稍后再试。' } 
+            : msg
+        ));
+      }
     } finally {
       setIsLoading(false);
+      abortControllerRef.current = null;
     }
-  }, [input, isLoading, contextLoading, addMessage, currentFunctionType]);
+  }, [input, isLoading, contextLoading, addMessage, currentFunctionType, setMessages]);
+
+  // 终止当前响应
+  const handleAbort = useCallback(() => {
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+      abortControllerRef.current = null;
+      setIsLoading(false);
+    }
+  }, []);
 
   // 处理键盘事件
   const handleKeyDown = useCallback((e) => {
@@ -170,14 +199,25 @@ const InputBar = () => {
         </>
       )}
       
-      <button 
-        className="send-btn" 
-        onClick={sendMessage}
-        disabled={!input.trim() || isLoading || contextLoading}
-        title="发送消息"
-      >
-        {isLoading || contextLoading ? '发送中...' : '发送'}
-      </button>
+      {/* 根据状态显示发送或终止按钮 */}
+      {isLoading || contextLoading ? (
+        <button 
+          className="send-btn abort-btn" 
+          onClick={handleAbort}
+          title="停止生成"
+        >
+          🛑 停止
+        </button>
+      ) : (
+        <button 
+          className="send-btn" 
+          onClick={sendMessage}
+          disabled={!input.trim()}
+          title="发送消息"
+        >
+          发送
+        </button>
+      )}
     </div>
   );
 };

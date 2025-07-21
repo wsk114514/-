@@ -81,3 +81,18 @@ input-bar.css - 输入区域组件样式
 .upload-btn:hover:not(:disabled) {
     background: #454555;
 }
+
+/* 终止按钮特殊样式 */
+.abort-btn {
+    background: #e74c3c;
+    color: white;
+    font-weight: 600;
+}
+
+.abort-btn:hover:not(:disabled) {
+    background: #c0392b;
+}
+
+.abort-btn:active {
+    transform: translateY(1px);
+}

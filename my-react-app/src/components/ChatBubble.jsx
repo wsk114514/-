@@ -3,7 +3,7 @@ import { useFunctionContext } from '../context/FunctionContext';
 
 const ChatBubble = ({ content, isUser, messageId, temp }) => {
   const [copied, setCopied] = useState(false);
-  const { regenerateMessage, isLoading } = useFunctionContext();
+  const { regenerateMessage, isLoading, abortResponse } = useFunctionContext();
   
   // 检测思考状态
   const isThinking = useMemo(() => 
@@ -11,23 +11,59 @@ const ChatBubble = ({ content, isUser, messageId, temp }) => {
     [content, temp]
   );
 
-  // 处理复制功能
+  // 检测当前消息是否正在重新生成（基于内容判断）
+  const isCurrentlyRegenerating = useMemo(() => 
+    content === '正在重新思考...' || (temp && !isUser),
+    [content, temp, isUser]
+  );
+
+  // 处理复制功能 - 兼容多种环境
   const handleCopy = useCallback(async () => {
     try {
-      await navigator.clipboard.writeText(content);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 1200);
+      // 优先使用现代 Clipboard API
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        await navigator.clipboard.writeText(content);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 1200);
+        return;
+      }
+      
+      // 后备方案：使用传统的 document.execCommand
+      const textArea = document.createElement('textarea');
+      textArea.value = content;
+      textArea.style.position = 'fixed';
+      textArea.style.left = '-999999px';
+      textArea.style.top = '-999999px';
+      document.body.appendChild(textArea);
+      textArea.focus();
+      textArea.select();
+      
+      if (document.execCommand('copy')) {
+        setCopied(true);
+        setTimeout(() => setCopied(false), 1200);
+      } else {
+        throw new Error('复制命令执行失败');
+      }
+      
+      document.body.removeChild(textArea);
     } catch (error) {
       console.error('复制失败:', error);
+      // 用户友好的错误提示
+      alert('复制失败，请手动选择文本进行复制');
     }
   }, [content]);
 
   // 处理重新生成
   const handleRegenerate = useCallback(async () => {
-    if (messageId && !isLoading) {
+    if (messageId && !isCurrentlyRegenerating && !isLoading) {
       await regenerateMessage(messageId);
     }
-  }, [messageId, isLoading, regenerateMessage]);
+  }, [messageId, isCurrentlyRegenerating, isLoading, regenerateMessage]);
+
+  // 处理终止重新生成
+  const handleAbortRegenerate = useCallback(() => {
+    abortResponse();
+  }, [abortResponse]);
 
   // 格式化内容显示
   const formattedContent = useMemo(() => {
@@ -74,14 +110,24 @@ const ChatBubble = ({ content, isUser, messageId, temp }) => {
             {copied ? '✅ 已复制' : '📋 复制'}
           </button>
           
-          <button 
-            className="bubble-btn regen" 
-            onClick={handleRegenerate}
-            disabled={isLoading || !messageId}
-            title="重新生成回答"
-          >
-            {isLoading ? '🔄 生成中...' : '🔄 重新生成'}
-          </button>
+          {isCurrentlyRegenerating ? (
+            <button 
+              className="bubble-btn abort" 
+              onClick={handleAbortRegenerate}
+              title="停止重新生成"
+            >
+              🛑 停止
+            </button>
+          ) : (
+            <button 
+              className="bubble-btn regen" 
+              onClick={handleRegenerate}
+              disabled={!messageId || isLoading}
+              title="重新生成回答"
+            >
+              🔄 重新生成
+            </button>
+          )}
         </div>
       )}
       

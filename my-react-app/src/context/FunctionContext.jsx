@@ -1,4 +1,4 @@
-import React, { createContext, useState, useContext, useEffect, useCallback } from 'react';
+import React, { createContext, useState, useContext, useEffect, useCallback, useRef } from 'react';
 import { getResponseStream } from '../services/api';
 
 const FunctionContext = createContext();
@@ -14,6 +14,9 @@ export const useFunctionContext = () => {
 export const FunctionProvider = ({ children }) => {
   const [currentFunctionType, setCurrentFunctionType] = useState('general');
   const [isLoading, setIsLoading] = useState(false);
+  
+  // 用于控制流式响应的中止
+  const abortControllerRef = useRef(null);
   
   // 每个功能独立的消息历史
   const [messagesByFunction, setMessagesByFunction] = useState({
@@ -65,17 +68,6 @@ export const FunctionProvider = ({ children }) => {
     }));
   }, [currentFunctionType]);
 
-  // 清空所有功能的消息
-  const clearAllMessages = useCallback(() => {
-    setMessagesByFunction({
-      general: [],
-      play: [],
-      game_guide: [],
-      doc_qa: [],
-      game_wiki: []
-    });
-  }, []);
-
   // 设置当前功能的消息
   const setMessages = useCallback((messagesOrUpdater) => {
     setMessagesByFunction(prev => {
@@ -120,9 +112,21 @@ export const FunctionProvider = ({ children }) => {
         )
       }));
       
-      // 使用流式响应重新获取回复
+      // 使用流式响应重新获取回复 - 添加重新生成标识和随机性
+      const regeneratePrompts = [
+        `请用不同的方式重新回答：${userMessage.content}`,
+        `换个角度回答这个问题：${userMessage.content}`,
+        `请提供另一种回答方式：${userMessage.content}`,
+        `重新思考并回答：${userMessage.content}`,
+        `用不同的表达方式回答：${userMessage.content}`
+      ];
+      const randomPrompt = regeneratePrompts[Math.floor(Math.random() * regeneratePrompts.length)];
+      
+      // 创建新的 AbortController
+      abortControllerRef.current = new AbortController();
+      
       let newResponse = '';
-      await getResponseStream(userMessage.content, currentFunctionType, (chunk) => {
+      await getResponseStream(randomPrompt, currentFunctionType, (chunk) => {
         newResponse += chunk;
         // 实时更新消息
         setMessagesByFunction(prev => ({
@@ -133,22 +137,43 @@ export const FunctionProvider = ({ children }) => {
               : msg
           )
         }));
-      });
+      }, abortControllerRef.current);
       
     } catch (error) {
       console.error('重新生成消息失败:', error);
-      setMessagesByFunction(prev => ({
-        ...prev,
-        [currentFunctionType]: prev[currentFunctionType].map(msg => 
-          msg.id && msg.id.startsWith('temp-') 
-            ? { ...msg, content: '抱歉，重新生成消息失败。', temp: false } 
-            : msg
-        )
-      }));
+      // 检查是否是用户主动中止
+      if (abortControllerRef.current && abortControllerRef.current.signal.aborted) {
+        setMessagesByFunction(prev => ({
+          ...prev,
+          [currentFunctionType]: prev[currentFunctionType].map(msg => 
+            msg.id && msg.id.startsWith('temp-') 
+              ? { ...msg, content: '已停止生成。', temp: false } 
+              : msg
+          )
+        }));
+      } else {
+        setMessagesByFunction(prev => ({
+          ...prev,
+          [currentFunctionType]: prev[currentFunctionType].map(msg => 
+            msg.id && msg.id.startsWith('temp-') 
+              ? { ...msg, content: '抱歉，重新生成消息失败。', temp: false } 
+              : msg
+          )
+        }));
+      }
     } finally {
       setIsLoading(false);
     }
   }, [currentFunctionType, messagesByFunction]);
+
+  // 终止当前的流式响应
+  const abortResponse = useCallback(() => {
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+      abortControllerRef.current = null;
+      setIsLoading(false);
+    }
+  }, []);
 
   // 上下文值
   const contextValue = {
@@ -164,8 +189,8 @@ export const FunctionProvider = ({ children }) => {
     switchFunction,
     addMessage,
     clearMessages,
-    clearAllMessages,
     regenerateMessage,
+    abortResponse,
     
     // 常量
     VALID_FUNCTION_TYPES

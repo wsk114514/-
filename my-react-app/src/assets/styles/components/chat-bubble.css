@@ -107,6 +107,19 @@ chat-bubble.css - 聊天气泡组件样式
     box-shadow: 0 1px 3px rgba(0,0,0,0.1);
 }
 
+/* 终止按钮特殊样式 */
+.bubble-btn.abort {
+    background: #e74c3c;
+    color: white;
+    font-weight: 600;
+}
+
+.bubble-btn.abort:hover {
+    background: #c0392b;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(231, 76, 60, 0.3);
+}
+
 /* ========== 思考指示器 ========== */
 .thinking-indicator {
     display: flex;

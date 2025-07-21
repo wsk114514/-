@@ -2,11 +2,11 @@ import React, { useCallback, useMemo } from 'react';
 import { useFunctionContext } from '../context/FunctionContext';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { clearFunctionMemory, clearAllMemory } from '../services/api';
+import { clearFunctionMemory } from '../services/api';
 
 const Sidebar = () => {
     const navigate = useNavigate();
-    const { setCurrentFunctionType, clearMessages, clearAllMessages, VALID_FUNCTION_TYPES, currentFunctionType } = useFunctionContext();
+    const { setCurrentFunctionType, clearMessages, VALID_FUNCTION_TYPES, currentFunctionType } = useFunctionContext();
     const { user, logout } = useAuth();
 
     // 手动清除当前功能记忆
@@ -20,20 +20,6 @@ const Sidebar = () => {
             alert('清除记忆失败，请重试');
         }
     }, [clearMessages, currentFunctionType]);
-
-    // 手动清除所有功能记忆
-    const handleClearAllMemory = useCallback(async () => {
-        if (window.confirm('确定要清除所有功能的对话记忆吗？此操作不可撤销。')) {
-            try {
-                clearAllMessages(); // 清除所有前端消息
-                await clearAllMemory(); // 清除后端所有记忆
-                alert('所有功能的对话记忆已清除');
-            } catch (error) {
-                console.error('清除所有记忆失败:', error);
-                alert('清除记忆失败，请重试');
-            }
-        }
-    }, [clearAllMessages]);
 
     // 菜单项配置
     const menuItems = useMemo(() => [
@@ -143,13 +129,6 @@ const Sidebar = () => {
                         title="清除当前功能的对话记忆"
                     >
                         清除当前记忆
-                    </button>
-                    <button 
-                        className="clear-all-memory-btn" 
-                        onClick={handleClearAllMemory}
-                        title="清除所有功能的对话记忆"
-                    >
-                        清除所有记忆
                     </button>
                     <button 
                         className="logout-btn" 

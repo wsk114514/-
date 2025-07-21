@@ -118,13 +118,13 @@ export async function getResponse(message, function_type) {
 }
 
 // 流式响应 API
-export async function getResponseStream(message, function_type, onChunk) {
+export async function getResponseStream(message, function_type, onChunk, abortController = null) {
   if (!onChunk || typeof onChunk !== 'function') {
     throw new APIError('onChunk 回调函数是必需的', 0);
   }
 
   try {
-    const response = await fetchWithRetry('/app/stream', {
+    const fetchOptions = {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -133,7 +133,14 @@ export async function getResponseStream(message, function_type, onChunk) {
         message: message,
         function: function_type
       }),
-    });
+    };
+
+    // 如果提供了 AbortController，添加 signal
+    if (abortController) {
+      fetchOptions.signal = abortController.signal;
+    }
+
+    const response = await fetchWithRetry('/app/stream', fetchOptions);
 
     const reader = response.body.getReader();
     const decoder = new TextDecoder();
@@ -149,10 +156,21 @@ export async function getResponseStream(message, function_type, onChunk) {
     // 批处理队列
     let chunkQueue = [];
     let isProcessing = false;
+    let isAborted = false;
+
+    // 监听中止信号
+    if (abortController) {
+      abortController.signal.addEventListener('abort', () => {
+        isAborted = true;
+        reader.cancel();
+      });
+    }
 
     // 处理字符队列
     const processCharQueue = async (chars) => {
       for (let i = 0; i < chars.length; i++) {
+        if (isAborted) break;
+        
         onChunk(chars[i]);
         
         // 为每个字符添加随机延迟
@@ -167,17 +185,17 @@ export async function getResponseStream(message, function_type, onChunk) {
 
     // 处理块队列
     const processQueue = async () => {
-      if (isProcessing) return;
+      if (isProcessing || isAborted) return;
       isProcessing = true;
 
-      while (chunkQueue.length > 0) {
+      while (chunkQueue.length > 0 && !isAborted) {
         const batch = chunkQueue.splice(0, streamConfig.batchSize);
         const batchText = batch.join('');
         
         await processCharQueue(batchText);
         
         // 批次间延迟
-        if (chunkQueue.length > 0) {
+        if (chunkQueue.length > 0 && !isAborted) {
           await new Promise(resolve => setTimeout(resolve, streamConfig.chunkDelay));
         }
       }
@@ -186,21 +204,24 @@ export async function getResponseStream(message, function_type, onChunk) {
     };
 
     try {
-      while (true) {
+      while (true && !isAborted) {
         const { done, value } = await reader.read();
-        if (done) break;
+        if (done || isAborted) break;
 
         buffer += decoder.decode(value, { stream: true });
         const lines = buffer.split('\n');
         buffer = lines.pop() || '';
 
         for (const line of lines) {
+          if (isAborted) break;
+          
           if (line.startsWith('data: ')) {
             const data = line.slice(6);
 
             if (data === '[DONE]') {
               // 等待队列处理完成
               while (chunkQueue.length > 0 || isProcessing) {
+                if (isAborted) break;
                 await new Promise(resolve => setTimeout(resolve, 10));
               }
               return;
@@ -226,6 +247,11 @@ export async function getResponseStream(message, function_type, onChunk) {
       }
     }
   } catch (error) {
+    // 如果是用户主动中止，不抛出错误
+    if (abortController && abortController.signal.aborted) {
+      return;
+    }
+    
     if (error instanceof APIError) {
       throw error;
     }
@@ -267,11 +293,6 @@ export async function clearMemory(functionType = 'current') {
 // 清除当前功能记忆
 export async function clearCurrentMemory() {
   return clearMemory('current');
-}
-
-// 清除所有功能记忆
-export async function clearAllMemory() {
-  return clearMemory('all');
 }
 
 // 清除指定功能记忆
