@@ -42,11 +42,14 @@ const ChatBubble = ({ content, isUser, messageId, temp }) => {
       );
     }
     
+    // 移除**标记
+    const contentWithoutBold = content.replace(/\*\*/g, '');
+    
     // 处理换行
-    return content.split('\n').map((line, index) => (
+    return contentWithoutBold.split('\n').map((line, index) => (
       <span key={index}>
         {line}
-        {index < content.split('\n').length - 1 && <br />}
+        {index < contentWithoutBold.split('\n').length - 1 && <br />}
       </span>
     ));
   }, [content, isThinking]);

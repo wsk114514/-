@@ -6,7 +6,7 @@ base.css - 基础样式和全局变量
 /* ========== CSS变量定义 ========== */
 :root {
     /* 颜色变量 */
-    --bg-primary: #18181c;
+    --bg-primary: #020206;
     --bg-secondary: #23232a;
     --bg-tertiary: #252529;
     --bg-quaternary: #353542;
@@ -22,8 +22,8 @@ base.css - 基础样式和全局变量
     --accent-warning: #ffc107;
     --accent-warning-hover: #ffca2c;
     
-    --gradient-ai: linear-gradient(90deg, #63ff6b 0%, #549140 100%);
-    --gradient-user: linear-gradient(90deg, #1976d2 0%, #64b5f6 100%);
+    --gradient-ai: #141414;
+    --gradient-user: #141414;
     --gradient-danger: linear-gradient(135deg, #ff6b6b, #ee5a52);
     
     --border-color: #333;

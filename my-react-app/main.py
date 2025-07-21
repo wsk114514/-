@@ -24,6 +24,7 @@ from document_processing import (
     init_vector_store, clear_vector_store, clear_all_document_data, generate_document_summary
 )
 from config import UPLOAD_DIR, ALLOWED_EXTENSIONS
+from pathlib import Path
 
 # 配置日志
 logging.basicConfig(level=logging.INFO)
@@ -103,7 +104,7 @@ app.add_middleware(
 
 
 # 静态文件服务
-app.mount("/static", StaticFiles(directory="static"), name="static")
+app.mount("/static", StaticFiles(directory=Path(__file__).parent / "static"), name="static")
 
 
 def get_app_state() -> ApplicationState:
