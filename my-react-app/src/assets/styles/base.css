@@ -6,9 +6,9 @@ base.css - 基础样式和全局变量
 /* ========== CSS变量定义 ========== */
 :root {
     /* 颜色变量 */
-    --bg-primary: #020206;
-    --bg-secondary: #23232a;
-    --bg-tertiary: #252529;
+    --bg-primary: #020204;/*次黑*/
+    --bg-secondary: #020206;/* ========== 最黑 ========== */
+    --bg-tertiary: #1c1c1d;
     --bg-quaternary: #353542;
     
     --text-primary: #fff;

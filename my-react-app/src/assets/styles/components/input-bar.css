@@ -25,7 +25,7 @@ input-bar.css - 输入区域组件样式
     padding: var(--spacing-md) 28px !important;
     border-radius: var(--border-radius-md);
     border: none;
-    background: var(--bg-tertiary);
+    background: var(--bg-secondary);
     color: var(--text-primary);
     font-size: var(--font-size-xl);
     outline: none;
