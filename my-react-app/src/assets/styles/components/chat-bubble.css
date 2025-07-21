@@ -78,7 +78,7 @@ chat-bubble.css - 聊天气泡组件样式
     font-size: var(--font-size-sm);
     border-radius: var(--border-radius-lg);
     border: none;
-    background: #2a2a2e;
+    background: var(--bg-tertiary);
     color: var(--text-secondary);
     box-shadow: var(--shadow-medium);
     cursor: pointer;
