@@ -63,7 +63,65 @@ base.css - 基础样式和全局变量
     --transition-normal: 0.3s ease;
     --transition-slow: 0.5s ease;
 }
-
+.light:root {
+    /* 颜色变量 */
+         --bg-primary: #f8f9fa;
+    --bg-secondary: #ffffff;
+    --bg-tertiary: #f1f1f1;
+    --bg-quaternary: #e9ecef;
+    
+    --text-primary: #333;
+    --text-secondary: #555;
+    --text-muted: #888;
+    
+    --accent-primary: #4f5ef6;
+    --accent-secondary: #3a47c9;
+    --accent-danger: #ff4d4f;
+    --accent-danger-hover: #ff7875;
+    --accent-warning: #ffc107;
+    --accent-warning-hover: #ffca2c;
+    
+    --gradient-ai: #f0f0f0;
+    --gradient-user: #e6f7ff;
+    --gradient-danger: linear-gradient(135deg, #ff6b6b, #ee5a52);
+    
+    --border-color: #ddd;
+    --shadow-light: 0 2px 6px rgba(0, 0, 0, 0.05);
+    --shadow-medium: 0 4px 12px rgba(0, 0, 0, 0.08);
+    --shadow-heavy: 0 6px 20px rgba(0, 0, 0, 0.1);
+    
+    /* 尺寸变量 */
+    --sidebar-width: 240px;
+    --border-radius-sm: 6px;
+    --border-radius-md: 8px;
+    --border-radius-lg: 12px;
+    --border-radius-xl: 14px;
+    
+    /* 间距变量 */
+    --spacing-xs: 4px;
+    --spacing-sm: 8px;
+    --spacing-md: 12px;
+    --spacing-lg: 16px;
+    --spacing-xl: 20px;
+    --spacing-2xl: 24px;
+    --spacing-3xl: 30px;
+    
+    /* 字体变量 */
+    --font-size-xs: 0.7em;
+    --font-size-sm: 0.75em;
+    --font-size-base: 1em;
+    --font-size-lg: 1.1em;
+    --font-size-xl: 1.2em;
+    --font-size-2xl: 1.4em;
+    --font-size-3xl: 1.5em;
+    --font-size-4xl: 1.8em;
+    --font-size-5xl: 2.0em;
+    
+    /* 过渡变量 */
+    --transition-fast: 0.2s ease;
+    --transition-normal: 0.3s ease;
+    --transition-slow: 0.5s ease;
+}
 /* ========== 基础重置样式 ========== */
 * {
     margin: 0;

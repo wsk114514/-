@@ -14,6 +14,7 @@ main.css - 主样式入口文件
 @import './components/chat-bubble.css';
 @import './components/input-bar.css';
 @import './components/states.css';
+@import './components/theme-toggle.css';
 
 /* ========== 工具样式导入 ========== */
 @import './utils/responsive.css';

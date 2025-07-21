@@ -5,6 +5,7 @@ import InputBar from '../components/InputBar';
 import { useFunctionContext } from '../context/FunctionContext';
 import { useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { useTheme } from '../context/ThemeContext';
 import '../assets/styles/main.css';
 
 const Chat = () => {
@@ -12,6 +13,7 @@ const Chat = () => {
   const location = useLocation();
   const [initialized, setInitialized] = useState(false);
   const { user } = useAuth();
+  const { theme, toggleTheme } = useTheme();
   const chatAreaRef = useRef(null);
   const messagesEndRef = useRef(null);
   
@@ -98,11 +100,21 @@ const Chat = () => {
       <Sidebar />
       
       <main className="main-content">
-        {/* 功能头部 */}
         <div className="function-header">
           <div className="function-title">
             <h2>{functionTitles[currentFunctionType]}</h2>
             <p className="function-description">{functionDescription}</p>
+          </div>
+          
+          {/* 添加主题切换按钮 */}
+          <div className="theme-toggle">
+            <button 
+              onClick={toggleTheme} 
+              className="theme-toggle-button"
+              aria-label={theme === 'dark' ? '切换到浅色主题' : '切换到深色主题'}
+            >
+              {theme === 'dark' ? '🌙' : '🌞'}
+            </button>
           </div>
           
           {/* 消息统计 */}
