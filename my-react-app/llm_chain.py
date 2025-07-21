@@ -277,11 +277,6 @@ def get_response(message: str, system: dict, function: str) -> str:
         人类: {input}
         AI助手:"""
         
-        from langchain_core.prompts import ChatPromptTemplate
-        from langchain_core.runnables import RunnableLambda
-        from langchain_core.output_parsers import StrOutputParser
-        from operator import itemgetter
-        
         prompt = ChatPromptTemplate.from_template(template)
         
         # 使用功能特定的记忆创建链

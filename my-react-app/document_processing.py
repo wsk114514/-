@@ -49,10 +49,27 @@ def process_uploaded_file(file_path: str):
             
         elif file_path.endswith('.pdf'):
             loader = PyPDFLoader(file_path)
-        elif file_path.endswith('.docx') or file_path.endswith('.doc'):
-            loader = Docx2txtLoader(file_path)
+        elif file_path.endswith('.docx'):
+            try:
+                loader = Docx2txtLoader(file_path)
+            except Exception as docx_error:
+                logger.error(f"加载 .docx 文件失败: {docx_error}")
+                raise ValueError(f"无法读取 .docx 文件。请确保文件未损坏且格式正确。错误信息: {str(docx_error)}")
+        elif file_path.endswith('.doc'):
+            # 对于旧版 .doc 文件，尝试使用 Docx2txtLoader（有时也能工作）
+            try:
+                loader = Docx2txtLoader(file_path)
+                logger.info("尝试使用 Docx2txtLoader 处理 .doc 文件")
+            except Exception as doc_error:
+                logger.error(f"无法处理 .doc 文件: {doc_error}")
+                raise ValueError(
+                    "无法处理旧版 .doc 文件格式。建议解决方案：\n"
+                    "1. 将文件另存为 .docx 格式后重新上传\n"
+                    "2. 将文件另存为 .txt 格式后上传\n"
+                    "3. 使用 Microsoft Word 或 LibreOffice 打开文件并保存为新格式"
+                )
         else:
-            raise ValueError("不支持的文件类型，请上传txt、pdf、docx或doc文件。")
+            raise ValueError("不支持的文件类型。支持的格式：txt、pdf、docx。对于 .doc 文件，请先转换为 .docx 格式。")
         
         documents = loader.load()
         logger.info(f"成功加载文档: {file_path}, 页数: {len(documents)}")

@@ -25,7 +25,7 @@ const InputBar = () => {
 
   // 接受的文件类型
   const acceptedFileTypes = useMemo(() => [
-    '.pdf', '.doc', '.docx', '.txt'
+    '.pdf', '.docx', '.txt'
   ], []);
 
   // 处理文件上传
