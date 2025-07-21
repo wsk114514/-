@@ -35,7 +35,7 @@ input-bar.css - 输入区域组件样式
 }
 
 .chat-input:focus {
-    background: #2a2a2e;
+    background: var(--bg-secondary);
 }
 
 .chat-input::placeholder {
