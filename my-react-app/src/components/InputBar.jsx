@@ -165,7 +165,7 @@ const InputBar = () => {
             disabled={uploading || isLoading}
             title="上传文档文件"
           >
-            {uploading ? '上传中...' : '📁 上传'}
+            {uploading ? '上传中...' : ' 上传文件'}
           </button>
         </>
       )}
@@ -176,7 +176,7 @@ const InputBar = () => {
         disabled={!input.trim() || isLoading || contextLoading}
         title="发送消息"
       >
-        {isLoading || contextLoading ? '发送中...' : '📤 发送'}
+        {isLoading || contextLoading ? '发送中...' : '发送'}
       </button>
     </div>
   );
