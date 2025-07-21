@@ -21,7 +21,7 @@ from auth import auth_manager
 from llm_chain import init_system, get_response, get_response_stream, clear_memory
 from document_processing import (
     process_uploaded_file, split_documents, 
-    init_vector_store, clear_vector_store, generate_document_summary
+    init_vector_store, clear_vector_store, clear_all_document_data, generate_document_summary
 )
 from config import UPLOAD_DIR, ALLOWED_EXTENSIONS
 
@@ -236,35 +236,67 @@ async def clear_function_memory_endpoint(function_type: str):
             content={"error": f"清除记忆失败: {str(e)}"}
         )
 
+# === 测试端点 ===
+
+@app.get("/test")
+async def test_endpoint():
+    """测试端点"""
+    return {"message": "后端服务正常运行", "status": "ok"}
+
+@app.get("/test/upload-config")
+async def test_upload_config():
+    """测试上传配置"""
+    return {
+        "upload_dir": UPLOAD_DIR,
+        "upload_dir_exists": os.path.exists(UPLOAD_DIR),
+        "allowed_extensions": ALLOWED_EXTENSIONS,
+        "status": "ok"
+    }
+
 # === 文档处理端点 ===
 
 @app.post("/upload", response_model=UploadResponse)
 async def upload_document(file: UploadFile = File(...)):
     """文档上传端点"""
     try:
+        logger.info(f"收到文件上传请求: {file.filename}")
+        
         # 验证文件类型
         file_extension = os.path.splitext(file.filename)[1].lower()
+        logger.info(f"文件扩展名: {file_extension}")
+        
         if file_extension not in ALLOWED_EXTENSIONS:
+            logger.warning(f"不支持的文件类型: {file_extension}")
             return JSONResponse(
                 status_code=400,
                 content={"error": f"不支持的文件类型。支持的类型: {', '.join(ALLOWED_EXTENSIONS)}"}
             )
         
+        # 确保上传目录存在
+        os.makedirs(UPLOAD_DIR, exist_ok=True)
+        logger.info(f"上传目录: {UPLOAD_DIR}")
+        
         # 保存文件
         file_path = os.path.join(UPLOAD_DIR, file.filename)
+        logger.info(f"准备保存文件到: {file_path}")
+        
         with open(file_path, "wb") as f:
             content = await file.read()
             f.write(content)
-            logger.info(f"文件保存成功: {file_path}")
+            logger.info(f"文件保存成功: {file_path}, 大小: {len(content)} 字节")
         
         # 处理文档
         try:
+            logger.info("开始处理文档...")
+            
             # 清除现有向量存储
             clear_vector_store()
             logger.info("向量存储已清除")
             
             # 处理上传的文档
             documents = process_uploaded_file(file_path)
+            logger.info(f"文档处理完成: {len(documents)} 个文档")
+            
             split_docs = split_documents(documents)
             logger.info(f"文档分割完成: {len(split_docs)} 个块")
             
@@ -285,7 +317,7 @@ async def upload_document(file: UploadFile = File(...)):
             )
             
         except Exception as e:
-            logger.error(f"文档处理失败: {str(e)}")
+            logger.error(f"文档处理失败: {str(e)}", exc_info=True)
             # 删除上传的文件
             if os.path.exists(file_path):
                 os.remove(file_path)
@@ -296,7 +328,7 @@ async def upload_document(file: UploadFile = File(...)):
             )
         
     except Exception as e:
-        logger.error(f"文件上传失败: {str(e)}")
+        logger.error(f"文件上传失败: {str(e)}", exc_info=True)
         return JSONResponse(
             status_code=500,
             content={"error": f"文件上传失败: {str(e)}"}
@@ -307,14 +339,30 @@ async def upload_document(file: UploadFile = File(...)):
 async def clear_documents():
     """清除所有文档端点"""
     try:
-        clear_vector_store()
+        clear_all_document_data()
         logger.info("所有文档已清除")
-        return SuccessResponse(message="所有文档已清除")
+        return SuccessResponse(message="所有文档和上传文件已清除")
     except Exception as e:
         logger.error(f"清除文档失败: {str(e)}")
         return JSONResponse(
             status_code=500,
             content={"error": f"清除文档失败: {str(e)}"}
+        )
+
+
+@app.post("/uploads/clear", response_model=SuccessResponse)
+async def clear_uploaded_files_endpoint():
+    """清除所有上传文件端点"""
+    try:
+        from document_processing import clear_uploaded_files
+        clear_uploaded_files()
+        logger.info("所有上传文件已清除")
+        return SuccessResponse(message="所有上传文件已清除")
+    except Exception as e:
+        logger.error(f"清除上传文件失败: {str(e)}")
+        return JSONResponse(
+            status_code=500,
+            content={"error": f"清除上传文件失败: {str(e)}"}
         )
 
 

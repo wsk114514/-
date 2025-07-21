@@ -5,7 +5,7 @@ from langchain_core.output_parsers import StrOutputParser
 from langchain.memory import ConversationBufferMemory
 from langchain_community.chat_models import ChatTongyi
 from langchain_chroma import Chroma  
-from document_processing import CHROMA_PATH, init_embeddings, clear_vector_store
+from document_processing import CHROMA_PATH, init_embeddings, clear_vector_store, clear_all_document_data
 import logging
 from operator import itemgetter
 
@@ -60,6 +60,14 @@ def clear_memory_for_function(function_type):
             memory_by_function[function_type].clear()
             logger.info(f"功能 {function_type} 的记忆已清除")
     
+    # 如果是文档问答功能，同时清除文档数据
+    if function_type == "doc_qa":
+        try:
+            clear_all_document_data()
+            logger.info(f"功能 {function_type} 的文档数据清除操作已完成")
+        except Exception as e:
+            logger.warning(f"清除功能 {function_type} 的文档数据时出现问题: {e}")
+    
 def clear_all_memories():
     """清除所有功能的记忆"""
     global memory_by_function, doc_qa_chain
@@ -71,7 +79,13 @@ def clear_all_memories():
         doc_qa_chain.memory.clear()
         logger.info("文档问答记忆已清除")
     
-    clear_vector_store()
+    # 清除所有文档数据（向量存储和上传文件）
+    try:
+        clear_all_document_data()
+        logger.info("文档数据清除操作已完成")
+    except Exception as e:
+        logger.warning(f"清除文档数据时出现问题: {e}")
+    
     logger.info("所有功能的记忆已清除")
 
 class EmptyDocQAChain:
@@ -225,7 +239,13 @@ def clear_memory(system, function_type=None):
             doc_qa_chain.memory.clear()
             logger.info("文档问答记忆已清除")
         
-        clear_vector_store()
+        # 如果没有指定功能类型或者是文档问答功能，清除文档数据
+        if function_type is None or function_type == "doc_qa":
+            try:
+                clear_all_document_data()
+                logger.info("文档数据清除操作已完成")
+            except Exception as e:
+                logger.warning(f"清除文档数据时出现问题: {e}")
     except Exception as e:
         logger.error(f"清除记忆失败: {str(e)}")
 
