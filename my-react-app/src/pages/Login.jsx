@@ -12,8 +12,8 @@ const Login = () => {
   const location = useLocation();
   const { login } = useAuth();
 
-  // 从状态中获取重定向路径
-  const from = location.state?.from?.pathname || '/chat';
+  // 从状态中获取重定向路径，默认重定向到通用助手
+  const from = location.state?.from?.pathname || '/general';
 
   // 随机背景图片逻辑
   useEffect(() => {

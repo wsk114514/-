@@ -2,32 +2,47 @@ import React, { useCallback, useMemo } from 'react';
 import { useFunctionContext } from '../context/FunctionContext';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { clearMemory } from '../services/api';
+import { clearFunctionMemory, clearAllMemory } from '../services/api';
 
 const Sidebar = () => {
     const navigate = useNavigate();
-    const { setCurrentFunctionType, clearMessages, VALID_FUNCTION_TYPES } = useFunctionContext();
+    const { setCurrentFunctionType, clearMessages, clearAllMessages, VALID_FUNCTION_TYPES, currentFunctionType } = useFunctionContext();
     const { user, logout } = useAuth();
 
-    // 安全的清除记忆函数
-    const safeClearMemory = useCallback(async () => {
+    // 手动清除当前功能记忆
+    const handleClearCurrentMemory = useCallback(async () => {
         try {
-            console.log('🔄 正在尝试清除后端记忆...');
-            const result = await clearMemory();
-            console.log('✅ 记忆已清除:', result);
-            return true;
+            clearMessages(); // 清除前端消息
+            await clearFunctionMemory(currentFunctionType); // 清除后端对应功能的记忆
+            alert('当前功能的对话记忆已清除');
         } catch (error) {
-            console.error('⚠️ 清除记忆失败:', {
-                message: error.message,
-                status: error.status,
-                name: error.name
-            });
-            return false;
+            console.error('清除记忆失败:', error);
+            alert('清除记忆失败，请重试');
         }
-    }, []);
+    }, [clearMessages, currentFunctionType]);
+
+    // 手动清除所有功能记忆
+    const handleClearAllMemory = useCallback(async () => {
+        if (window.confirm('确定要清除所有功能的对话记忆吗？此操作不可撤销。')) {
+            try {
+                clearAllMessages(); // 清除所有前端消息
+                await clearAllMemory(); // 清除后端所有记忆
+                alert('所有功能的对话记忆已清除');
+            } catch (error) {
+                console.error('清除所有记忆失败:', error);
+                alert('清除记忆失败，请重试');
+            }
+        }
+    }, [clearAllMessages]);
 
     // 菜单项配置
     const menuItems = useMemo(() => [
+        {
+            key: 'general',
+            href: '/general',
+            label: '通用助手',
+            icon: '💬'
+        },
         {
             key: 'play',
             href: '/play',
@@ -67,12 +82,6 @@ const Sidebar = () => {
         try {
             console.log(`🔄 切换到功能: ${functionType}`);
             
-            // 尝试清除后端记忆（不阻塞切换流程）
-            await safeClearMemory();
-            
-            // 清除前端消息（总是执行）
-            clearMessages();
-            
             // 设置新的功能类型并导航
             setCurrentFunctionType(functionType);
             navigate(`/${functionType}`);
@@ -81,7 +90,7 @@ const Sidebar = () => {
         } catch (error) {
             console.error('❌ 切换功能失败:', error);
         }
-    }, [VALID_FUNCTION_TYPES, clearMessages, setCurrentFunctionType, navigate, safeClearMemory]);
+    }, [VALID_FUNCTION_TYPES, setCurrentFunctionType, navigate]);
 
     // 处理退出登录
     const handleLogout = useCallback(() => {
@@ -111,7 +120,7 @@ const Sidebar = () => {
                     <a 
                         key={item.key}
                         href={item.href} 
-                        className="menu-item" 
+                        className={`menu-item ${item.key === 'general' ? 'menu-item-general' : ''}`}
                         onClick={(e) => handleMenuItemClick(item.key, e)}
                     >
                         <span className="menu-icon">{item.icon}</span>
@@ -125,9 +134,23 @@ const Sidebar = () => {
                 ))}
             </nav>
             
-            {/* 底部退出按钮 */}
+            {/* 底部功能按钮 */}
             {user && (
                 <div className="sidebar-footer">
+                    <button 
+                        className="clear-memory-btn" 
+                        onClick={handleClearCurrentMemory}
+                        title="清除当前功能的对话记忆"
+                    >
+                        清除当前记忆
+                    </button>
+                    <button 
+                        className="clear-all-memory-btn" 
+                        onClick={handleClearAllMemory}
+                        title="清除所有功能的对话记忆"
+                    >
+                        清除所有记忆
+                    </button>
                     <button 
                         className="logout-btn" 
                         onClick={handleLogout}

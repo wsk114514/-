@@ -34,16 +34,36 @@ class ApplicationState:
     """应用状态管理类"""
     
     def __init__(self):
-        self.llm_system = None
+        self.llm_systems = {}  # 按功能类型存储系统
+        self.valid_functions = ["general", "play", "game_guide", "doc_qa", "game_wiki"]
     
     def initialize(self):
         """初始化应用状态"""
         try:
-            self.llm_system = init_system()
+            # 初始化默认的通用系统
+            self.llm_systems["general"] = init_system("general")
             logger.info("LLM系统初始化成功")
         except Exception as e:
             logger.error(f"LLM系统初始化失败: {str(e)}")
             raise
+    
+    def get_system_for_function(self, function_type: str):
+        """获取指定功能的系统，如果不存在则创建"""
+        if function_type not in self.valid_functions:
+            function_type = "general"
+        
+        if function_type not in self.llm_systems:
+            try:
+                self.llm_systems[function_type] = init_system(function_type)
+                logger.info(f"为功能 {function_type} 创建了新的LLM系统")
+            except Exception as e:
+                logger.error(f"为功能 {function_type} 创建系统失败: {str(e)}")
+                # 使用通用系统作为后备
+                if "general" in self.llm_systems:
+                    return self.llm_systems["general"]
+                raise
+        
+        return self.llm_systems[function_type]
 
 
 # 全局应用状态
@@ -91,15 +111,15 @@ def get_app_state() -> ApplicationState:
     return app_state
 
 
-def get_llm_system():
-    """依赖注入：获取LLM系统"""
-    return app_state.llm_system
+def get_llm_system(function_type: str = "general"):
+    """依赖注入：获取指定功能的LLM系统"""
+    return app_state.get_system_for_function(function_type)
 
 
 # === 对话相关端点 ===
 
 @app.post("/app", response_model=ChatResponse)
-async def chat_endpoint(req: ChatRequest, system=Depends(get_llm_system)):
+async def chat_endpoint(req: ChatRequest):
     """处理聊天请求"""
     try:
         message = req.message.strip()
@@ -109,6 +129,8 @@ async def chat_endpoint(req: ChatRequest, system=Depends(get_llm_system)):
                 content={"error": "消息不能为空"}
             )
         
+        # 获取功能特定的系统
+        system = get_llm_system(req.function)
         response = get_response(message, system, req.function)
         return ChatResponse(response=response)
         
@@ -121,7 +143,7 @@ async def chat_endpoint(req: ChatRequest, system=Depends(get_llm_system)):
 
 
 @app.post("/app/stream")
-async def chat_stream_endpoint(req: ChatRequest, system=Depends(get_llm_system)):
+async def chat_stream_endpoint(req: ChatRequest):
     """流式响应对话端点"""
     try:
         message = req.message.strip()
@@ -130,6 +152,9 @@ async def chat_stream_endpoint(req: ChatRequest, system=Depends(get_llm_system))
                 status_code=400,
                 content={"error": "消息不能为空"}
             )
+        
+        # 获取功能特定的系统
+        system = get_llm_system(req.function)
         
         async def generate():
             """生成流式响应"""
@@ -162,12 +187,48 @@ async def chat_stream_endpoint(req: ChatRequest, system=Depends(get_llm_system))
 # === 记忆管理端点 ===
 
 @app.post("/memory/clear", response_model=SuccessResponse)
-async def clear_memory_endpoint(system=Depends(get_llm_system)):
+async def clear_memory_endpoint(function_type: str = "current"):
     """清除记忆端点"""
     try:
-        clear_memory(system)
-        logger.info("记忆已清除")
-        return SuccessResponse(message="记忆已清除")
+        if function_type == "all":
+            # 清除所有功能的记忆
+            from llm_chain import clear_all_memories
+            clear_all_memories()
+            logger.info("所有记忆已清除")
+            return SuccessResponse(message="所有记忆已清除")
+        elif function_type == "current":
+            # 向后兼容：清除默认系统记忆
+            system = get_llm_system("general")
+            clear_memory(system)
+            logger.info("当前记忆已清除")
+            return SuccessResponse(message="当前记忆已清除")
+        else:
+            # 清除指定功能的记忆
+            from llm_chain import clear_memory_for_function
+            clear_memory_for_function(function_type)
+            logger.info(f"功能 {function_type} 的记忆已清除")
+            return SuccessResponse(message=f"功能 {function_type} 的记忆已清除")
+    except Exception as e:
+        logger.error(f"清除记忆失败: {str(e)}")
+        return JSONResponse(
+            status_code=500,
+            content={"error": f"清除记忆失败: {str(e)}"}
+        )
+
+@app.post("/memory/clear/{function_type}", response_model=SuccessResponse)
+async def clear_function_memory_endpoint(function_type: str):
+    """清除指定功能记忆端点"""
+    try:
+        if function_type == "all":
+            from llm_chain import clear_all_memories
+            clear_all_memories()
+            logger.info("所有记忆已清除")
+            return SuccessResponse(message="所有记忆已清除")
+        else:
+            from llm_chain import clear_memory_for_function
+            clear_memory_for_function(function_type)
+            logger.info(f"功能 {function_type} 的记忆已清除")
+            return SuccessResponse(message=f"功能 {function_type} 的记忆已清除")
     except Exception as e:
         logger.error(f"清除记忆失败: {str(e)}")
         return JSONResponse(

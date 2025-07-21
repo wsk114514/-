@@ -9,7 +9,7 @@ sidebar.css - 侧边栏布局样式
     background: var(--bg-secondary);
     display: flex;
     flex-direction: column;
-    padding: var(--spacing-xl) 0;
+    padding: var(--spacing-lg) 0;
     box-shadow: 2px 0 8px rgba(0, 0, 0, 0.1);
     position: relative;
     z-index: 10;
@@ -19,46 +19,53 @@ sidebar.css - 侧边栏布局样式
 
 /* ========== Logo样式 ========== */
 .logo {
-    font-size: var(--font-size-5xl);
+    font-size: var(--font-size-4xl);
     font-weight: bold;
     color: var(--text-primary);
     text-align: center;
-    margin-bottom: var(--spacing-2xl);
+    margin-bottom: var(--spacing-lg);
     letter-spacing: 1px;
 }
 
 /* ========== 用户信息样式 ========== */
 .user-info {
-    padding: 10px;
+    padding: var(--spacing-sm);
     text-align: center;
     color: var(--text-primary);
     background-color: rgba(0, 0, 0, 0.2);
-    margin-bottom: 10px;
+    margin-bottom: var(--spacing-md);
     border-radius: var(--border-radius-md);
-    margin: 0 var(--spacing-lg) var(--spacing-lg);
+    margin: 0 var(--spacing-lg) var(--spacing-md);
+    font-size: var(--font-size-sm);
 }
 
 /* ========== 导航菜单样式 ========== */
 .menu {
     display: flex;
     flex-direction: column;
-    gap: var(--spacing-md);
+    gap: var(--spacing-sm);
     align-items: center;
-    font-size: var(--font-size-2xl);
+    font-size: var(--font-size-lg);
     text-align: center;
+    flex: 1;
+    padding: 0 var(--spacing-md);
 }
 
 .menu-item {
     color: var(--text-secondary);
     text-decoration: none;
-    padding: var(--spacing-md) var(--spacing-xl);
+    padding: var(--spacing-sm) var(--spacing-md);
     border-radius: var(--border-radius-md);
     transition: all var(--transition-fast);
-    width: 85%;
+    width: 100%;
+    height: 48px;
     display: flex;
     align-items: center;
-    gap: 10px;
+    justify-content: flex-start;
+    gap: var(--spacing-sm);
     font-weight: 500;
+    font-size: var(--font-size-sm);
+    box-sizing: border-box;
 }
 
 .menu-item:hover {
@@ -66,60 +73,125 @@ sidebar.css - 侧边栏布局样式
     color: var(--text-primary);
     transform: translateX(2px);
     box-shadow: 0 2px 8px rgba(79, 94, 246, 0.3);
-    text-decoration: None;
+    text-decoration: none;
+}
+
+/* 通用助手按钮特殊样式 */
+.menu-item.general-assistant {
+    background: linear-gradient(135deg, #4f5ef6, #6366f1);
+    color: var(--text-primary);
+    border: 1px solid rgba(79, 94, 246, 0.3);
+}
+
+.menu-item.general-assistant:hover {
+    background: linear-gradient(135deg, #3a47c9, #4f46e5);
+    transform: translateX(3px);
+    box-shadow: 0 3px 12px rgba(79, 94, 246, 0.4);
 }
 
 .menu-icon {
-    font-size: 1.2em;
+    font-size: 1.1em;
+    min-width: 20px;
+    text-align: center;
 }
 
 /* ========== 最近聊天记录按钮区样式 ========== */
 .recent-chats {
     display: flex;
     flex-direction: column;
-    gap: 10px;
-    margin-top: 100px;
+    gap: var(--spacing-sm);
+    margin-top: auto;
+    margin-bottom: var(--spacing-md);
     align-items: center;
+    padding: 0 var(--spacing-md);
 }
 
 .recent-chat-btn {
-    width: 160px;
-    padding: 10px 0;
+    width: 100%;
+    height: 40px;
+    padding: 0;
     border-radius: var(--border-radius-md);
     border: none;
     background: var(--bg-quaternary);
     color: var(--text-secondary);
-    font-size: var(--font-size-3xl);
+    font-size: var(--font-size-sm);
     cursor: pointer;
-    transition: background var(--transition-fast), color var(--transition-fast);
+    transition: all var(--transition-fast);
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .recent-chat-btn:hover {
     background: var(--accent-primary);
     color: var(--text-primary);
+    transform: translateY(-1px);
 }
 
 /* ========== 侧边栏底部样式 ========== */
 .sidebar-footer {
-    margin-top: auto;
-    margin-bottom: auto;
-    padding: var(--spacing-lg) var(--spacing-3xl) var(--spacing-3xl);  /* 调整左右内边距与输入栏对齐 */
+    padding: var(--spacing-md);
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-xs);
+}
+
+/* 清除记忆按钮样式 */
+.clear-memory-btn,
+.clear-all-memory-btn {
+    width: 100%;
+    height: 36px;
+    padding: 0 var(--spacing-sm);
+    background-color: var(--accent-warning);
+    color: var(--text-primary);
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: 500;
+    transition: all var(--transition-normal);
+    box-shadow: 0 2px 6px rgba(255, 193, 7, 0.3);
+    letter-spacing: 0.3px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.clear-memory-btn:hover,
+.clear-all-memory-btn:hover {
+    background-color: var(--accent-warning-hover);
+    transform: translateY(-1px);
+    box-shadow: 0 3px 8px rgba(255, 193, 7, 0.4);
+}
+
+.clear-all-memory-btn {
+    background-color: var(--accent-danger);
+    box-shadow: 0 2px 6px rgba(255, 77, 79, 0.3);
+}
+
+.clear-all-memory-btn:hover {
+    background-color: var(--accent-danger-hover);
+    box-shadow: 0 3px 8px rgba(255, 77, 79, 0.4);
 }
 
 .logout-btn {
     width: 100%;
-    height: auto;
-    padding: 14px var(--spacing-lg);
+    height: 40px;
+    padding: 0 var(--spacing-sm);
     background-color: var(--accent-danger);
     color: var(--text-primary);
     border: none;
-    border-radius: 10px;
+    border-radius: 8px;
     cursor: pointer;
-    font-size: var(--font-size-base);
+    font-size: var(--font-size-sm);
     font-weight: 600;
     transition: all var(--transition-normal);
     box-shadow: 0 3px 8px rgba(255, 77, 79, 0.3);
     letter-spacing: 0.5px;
+    margin-top: var(--spacing-xs);
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .logout-btn:hover {

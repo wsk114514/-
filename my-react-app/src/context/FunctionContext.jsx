@@ -13,8 +13,16 @@ export const useFunctionContext = () => {
 
 export const FunctionProvider = ({ children }) => {
   const [currentFunctionType, setCurrentFunctionType] = useState('general');
-  const [messages, setMessages] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
+  
+  // 每个功能独立的消息历史
+  const [messagesByFunction, setMessagesByFunction] = useState({
+    general: [],
+    play: [],
+    game_guide: [],
+    doc_qa: [],
+    game_wiki: []
+  });
 
   // 有效的功能类型
   const VALID_FUNCTION_TYPES = ['play', 'game_guide', 'doc_qa', 'game_wiki', 'general'];
@@ -29,7 +37,10 @@ export const FunctionProvider = ({ children }) => {
     }
   }, []);
 
-  // 切换功能类型
+  // 获取当前功能的消息
+  const messages = messagesByFunction[currentFunctionType] || [];
+
+  // 切换功能类型（不清除记忆）
   const switchFunction = useCallback((functionType) => {
     if (VALID_FUNCTION_TYPES.includes(functionType)) {
       setCurrentFunctionType(functionType);
@@ -38,69 +49,106 @@ export const FunctionProvider = ({ children }) => {
     }
   }, []);
 
-  // 添加消息
+  // 添加消息到当前功能
   const addMessage = useCallback((message) => {
-    setMessages(prev => [...prev, message]);
+    setMessagesByFunction(prev => ({
+      ...prev,
+      [currentFunctionType]: [...(prev[currentFunctionType] || []), message]
+    }));
+  }, [currentFunctionType]);
+
+  // 清空当前功能的消息
+  const clearMessages = useCallback(() => {
+    setMessagesByFunction(prev => ({
+      ...prev,
+      [currentFunctionType]: []
+    }));
+  }, [currentFunctionType]);
+
+  // 清空所有功能的消息
+  const clearAllMessages = useCallback(() => {
+    setMessagesByFunction({
+      general: [],
+      play: [],
+      game_guide: [],
+      doc_qa: [],
+      game_wiki: []
+    });
   }, []);
 
-  // 清空消息
-  const clearMessages = useCallback(() => {
-    setMessages([]);
-  }, []);
+  // 设置当前功能的消息
+  const setMessages = useCallback((messagesOrUpdater) => {
+    setMessagesByFunction(prev => {
+      const currentMessages = prev[currentFunctionType] || [];
+      const newMessages = typeof messagesOrUpdater === 'function' 
+        ? messagesOrUpdater(currentMessages)
+        : messagesOrUpdater;
+      
+      return {
+        ...prev,
+        [currentFunctionType]: newMessages
+      };
+    });
+  }, [currentFunctionType]);
 
   // 重新生成消息
   const regenerateMessage = useCallback(async (messageId) => {
     try {
       setIsLoading(true);
       
-      // 找到要重新生成的消息
-      const messageToRegenerate = messages.find(msg => msg.id === messageId);
+      // 获取当前消息并查找要重新生成的消息
+      const currentMessages = messagesByFunction[currentFunctionType] || [];
+      const messageToRegenerate = currentMessages.find(msg => msg.id === messageId);
+      
       if (!messageToRegenerate || messageToRegenerate.isUser) {
         return;
       }
       
-      // 找到该消息对应的用户消息
-      const messageIndex = messages.findIndex(msg => msg.id === messageId);
+      const messageIndex = currentMessages.findIndex(msg => msg.id === messageId);
       if (messageIndex <= 0) return;
       
-      const userMessage = messages[messageIndex - 1];
-      
-      // 添加"正在思考..."的临时消息
+      const userMessage = currentMessages[messageIndex - 1];
       const tempId = `temp-${Date.now()}`;
-      setMessages(prev => [
-        ...prev.slice(0, messageIndex),
-        { 
-          content: '正在重新思考...', 
-          isUser: false, 
-          temp: true,
-          id: tempId
-        },
-        ...prev.slice(messageIndex + 1)
-      ]);
+      
+      // 更新消息为"正在重新思考..."
+      setMessagesByFunction(prev => ({
+        ...prev,
+        [currentFunctionType]: prev[currentFunctionType].map((msg, index) => 
+          index === messageIndex 
+            ? { ...msg, content: '正在重新思考...', temp: true, id: tempId }
+            : msg
+        )
+      }));
       
       // 使用流式响应重新获取回复
       let newResponse = '';
       await getResponseStream(userMessage.content, currentFunctionType, (chunk) => {
         newResponse += chunk;
         // 实时更新消息
-        setMessages(prev => prev.map(msg => 
-          msg.id === tempId 
-            ? { ...msg, content: newResponse, temp: false } 
-            : msg
-        ));
+        setMessagesByFunction(prev => ({
+          ...prev,
+          [currentFunctionType]: prev[currentFunctionType].map(msg => 
+            msg.id === tempId 
+              ? { ...msg, content: newResponse, temp: false } 
+              : msg
+          )
+        }));
       });
       
     } catch (error) {
       console.error('重新生成消息失败:', error);
-      setMessages(prev => prev.map(msg => 
-        msg.id.startsWith('temp-') 
-          ? { ...msg, content: '抱歉，重新生成消息失败。', temp: false } 
-          : msg
-      ));
+      setMessagesByFunction(prev => ({
+        ...prev,
+        [currentFunctionType]: prev[currentFunctionType].map(msg => 
+          msg.id && msg.id.startsWith('temp-') 
+            ? { ...msg, content: '抱歉，重新生成消息失败。', temp: false } 
+            : msg
+        )
+      }));
     } finally {
       setIsLoading(false);
     }
-  }, [messages, currentFunctionType]);
+  }, [currentFunctionType, messagesByFunction]);
 
   // 上下文值
   const contextValue = {
@@ -108,6 +156,7 @@ export const FunctionProvider = ({ children }) => {
     currentFunctionType,
     messages,
     isLoading,
+    messagesByFunction,
     
     // 操作方法
     setCurrentFunctionType,
@@ -115,6 +164,7 @@ export const FunctionProvider = ({ children }) => {
     switchFunction,
     addMessage,
     clearMessages,
+    clearAllMessages,
     regenerateMessage,
     
     // 常量

@@ -234,9 +234,14 @@ export async function getResponseStream(message, function_type, onChunk) {
 }
 
 // 清除记忆 API
-export async function clearMemory() {
+export async function clearMemory(functionType = 'current') {
   try {
-    const response = await fetchWithRetry('/memory/clear', {
+    let url = '/memory/clear';
+    if (functionType !== 'current') {
+      url = `/memory/clear/${functionType}`;
+    }
+    
+    const response = await fetchWithRetry(url, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -257,6 +262,21 @@ export async function clearMemory() {
     }
     throw new APIError('清除记忆失败', 0);
   }
+}
+
+// 清除当前功能记忆
+export async function clearCurrentMemory() {
+  return clearMemory('current');
+}
+
+// 清除所有功能记忆
+export async function clearAllMemory() {
+  return clearMemory('all');
+}
+
+// 清除指定功能记忆
+export async function clearFunctionMemory(functionType) {
+  return clearMemory(functionType);
 }
 
 // 用户认证 API

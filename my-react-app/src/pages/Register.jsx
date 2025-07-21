@@ -37,8 +37,8 @@ const Register = () => {
       // 注册成功后直接登录
       login({ username });
       
-      // 跳转到聊天页面
-      navigate('/chat');
+      // 跳转到通用助手页面
+      navigate('/general');
     } catch (err) {
       setError(err.message);
     }
