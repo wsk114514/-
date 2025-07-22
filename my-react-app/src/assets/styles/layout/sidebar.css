@@ -141,12 +141,12 @@ sidebar.css - 侧边栏布局样式
     gap: var(--spacing-xs);
 }
 
-/* 清除记忆按钮样式 */
-.clear-memory-btn {
+/* 开启新对话按钮样式 */
+.new-chat-btn {
     width: 100%;
     height: 40px;
     padding: 0 var(--spacing-sm);
-    background-color: var(--accent-danger);
+    background-color: var(--accent-primary);
     color: var(--text-primary);
     border: none;
     border-radius: 8px;
@@ -154,18 +154,19 @@ sidebar.css - 侧边栏布局样式
     font-size: var(--font-size-md);
     font-weight: 600;
     transition: all var(--transition-normal);
-    box-shadow: 0 2px 6px rgba(255, 193, 7, 0.3);
+    box-shadow: 0 3px 8px rgba(79, 94, 246, 0.3);
     letter-spacing: 0.5px;
     margin-top: var(--spacing-xs);
     display: flex;
     align-items: center;
     justify-content: center;
+    gap: var(--spacing-xs);
 }
 
-.clear-memory-btn:hover {
-    background-color: var(--accent-warning-hover);
+.new-chat-btn:hover {
+    background-color: var(--accent-secondary);
     transform: translateY(-1px);
-    box-shadow: 0 3px 8px rgba(255, 193, 7, 0.4);
+    box-shadow: 0 4px 12px rgba(79, 94, 246, 0.4);
 }
 
 .logout-btn {
@@ -240,4 +241,49 @@ sidebar.css - 侧边栏布局样式
     background-color: var(--accent-secondary-hover);
     transform: translateY(-1px);
     box-shadow: 0 3px 6px rgba(108, 117, 125, 0.3);
+}
+
+/* ========== 聊天历史区域样式 ========== */
+.chat-history-section {
+    margin: var(--spacing-md) var(--spacing-md) var(--spacing-lg);
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-xs);
+}
+
+.history-btn,
+.save-chat-btn {
+    width: 100%;
+    height: 32px;
+    padding: 0 var(--spacing-sm);
+    background-color: var(--accent-primary);
+    color: var(--text-primary);
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: var(--font-size-sm);
+    font-weight: 500;
+    transition: all var(--transition-normal);
+    box-shadow: 0 2px 4px rgba(79, 94, 246, 0.2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--spacing-xs);
+}
+
+.history-btn:hover,
+.save-chat-btn:hover {
+    background-color: var(--accent-secondary);
+    transform: translateY(-1px);
+    box-shadow: 0 3px 6px rgba(79, 94, 246, 0.3);
+}
+
+.save-chat-btn {
+    background-color: var(--accent-warning);
+    box-shadow: 0 2px 4px rgba(255, 193, 7, 0.2);
+}
+
+.save-chat-btn:hover {
+    background-color: var(--accent-warning-hover);
+    box-shadow: 0 3px 6px rgba(255, 193, 7, 0.3);
 }

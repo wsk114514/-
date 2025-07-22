@@ -13,6 +13,7 @@ base.css - 基础样式和全局变量
     
     --text-primary: #fff;
     --text-secondary: #bdbdbd;
+    --text-tertiary: #888;
     --text-muted: #666;
     
     --accent-primary: #4f5ef6;
@@ -72,6 +73,7 @@ base.css - 基础样式和全局变量
     
     --text-primary: #333;
     --text-secondary: #555;
+    --text-tertiary: #666;
     --text-muted: #888;
     
     --accent-primary: #4f5ef6;

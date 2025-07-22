@@ -4,12 +4,21 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { clearFunctionMemory } from '../services/api';
 import { getCurrentUserId, getSessionInfo, clearUserSession } from '../utils/userSession';
+import { saveChatHistory } from '../utils/chatHistory';
+import ChatHistory from './ChatHistory';
 
 const Sidebar = () => {
     const navigate = useNavigate();
-    const { setCurrentFunctionType, clearMessages, VALID_FUNCTION_TYPES, currentFunctionType } = useFunctionContext();
+    const { 
+        setCurrentFunctionType, 
+        clearMessages, 
+        VALID_FUNCTION_TYPES, 
+        currentFunctionType,
+        getCurrentChat
+    } = useFunctionContext();
     const { user, logout } = useAuth();
     const [sessionInfo, setSessionInfo] = useState(null);
+    const [showChatHistory, setShowChatHistory] = useState(false);
 
     // 获取会话信息
     useEffect(() => {
@@ -17,17 +26,28 @@ const Sidebar = () => {
         setSessionInfo(info);
     }, []);
 
-    // 手动清除当前功能记忆
-    const handleClearCurrentMemory = useCallback(async () => {
+    // 开启新对话（保存当前聊天并清除记忆）
+    const handleStartNewChat = useCallback(async () => {
         try {
-            clearMessages(); // 清除前端消息
-            await clearFunctionMemory(currentFunctionType); // 清除后端对应功能的记忆
-            alert('当前功能的对话记忆已清除');
+            // 先保存当前聊天记录（如果有内容）
+            const currentChat = getCurrentChat();
+            if (currentChat.messages.length > 0) {
+                saveChatHistory(currentChat.messages, currentChat.functionType);
+                console.log('当前聊天已自动保存到历史记录');
+            }
+            
+            // 清除前端消息
+            clearMessages();
+            
+            // 清除后端对应功能的记忆
+            await clearFunctionMemory(currentFunctionType);
+            
+            alert('已开启新对话，之前的聊天已保存到历史记录');
         } catch (error) {
-            console.error('清除记忆失败:', error);
-            alert('清除记忆失败，请重试');
+            console.error('开启新对话失败:', error);
+            alert('开启新对话失败，请重试');
         }
-    }, [clearMessages, currentFunctionType]);
+    }, [clearMessages, currentFunctionType, getCurrentChat]);
 
     // 清除用户会话
     const handleClearUserSession = useCallback(() => {
@@ -39,6 +59,27 @@ const Sidebar = () => {
             alert('用户会话已重置');
         }
     }, [clearMessages]);
+
+    // 保存当前聊天为历史记录
+    const handleSaveCurrentChat = useCallback(() => {
+        const currentChat = getCurrentChat();
+        if (currentChat.messages.length > 0) {
+            saveChatHistory(currentChat.messages, currentChat.functionType);
+            alert('当前聊天已保存到历史记录');
+        } else {
+            alert('当前没有聊天内容可保存');
+        }
+    }, [getCurrentChat]);
+
+    // 打开历史聊天
+    const handleOpenChatHistory = useCallback(() => {
+        setShowChatHistory(true);
+    }, []);
+
+    // 关闭历史聊天
+    const handleCloseChatHistory = useCallback(() => {
+        setShowChatHistory(false);
+    }, []);
 
     // 菜单项配置
     const menuItems = useMemo(() => [
@@ -108,6 +149,7 @@ const Sidebar = () => {
     }, [logout, navigate]);
 
     return (
+        <>
         <aside className="sidebar">
             {/* Logo */}
             <div className="logo">
@@ -118,7 +160,7 @@ const Sidebar = () => {
             {/* 用户信息 */}
             {user && (
                 <div className="user-info">
-                    欢迎, {user.username}
+                    欢迎😊, {user.username}
                 </div>
             )}
             
@@ -142,17 +184,35 @@ const Sidebar = () => {
                 ))}
             </nav>
             
+            {/* 聊天历史按钮 */}
+            {user && (
+                <div className="chat-history-section">
+                    <button 
+                        className="history-btn"
+                        onClick={handleOpenChatHistory}
+                        title="查看聊天历史"
+                    >
+                        📚 聊天历史
+                    </button>
+                    <button 
+                        className="save-chat-btn"
+                        onClick={handleSaveCurrentChat}
+                        title="保存当前聊天"
+                    >
+                        💾 保存聊天
+                    </button>
+                </div>
+            )}
 
-            
             {/* 底部功能按钮 */}
             {user && (
                 <div className="sidebar-footer">
                     <button 
-                        className="clear-memory-btn" 
-                        onClick={handleClearCurrentMemory}
-                        title="清除当前功能的对话记忆"
+                        className="new-chat-btn" 
+                        onClick={handleStartNewChat}
+                        title="保存当前聊天并开启新对话"
                     >
-                        清除当前记忆
+                        💬 开启新对话
                     </button>
                     <button 
                         className="logout-btn" 
@@ -163,6 +223,13 @@ const Sidebar = () => {
                 </div>
             )}
         </aside>
+        
+        {/* 聊天历史模态框 */}
+        <ChatHistory 
+            isOpen={showChatHistory}
+            onClose={handleCloseChatHistory}
+        />
+        </>
     );
 };
 

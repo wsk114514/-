@@ -83,6 +83,29 @@ export const FunctionProvider = ({ children }) => {
     });
   }, [currentFunctionType]);
 
+  // 加载历史聊天
+  const loadHistoryChat = useCallback((history) => {
+    // 切换到对应的功能类型
+    if (history.functionType !== currentFunctionType) {
+      setCurrentFunctionType(history.functionType);
+    }
+    
+    // 加载历史消息
+    setMessagesByFunction(prev => ({
+      ...prev,
+      [history.functionType]: history.messages
+    }));
+  }, [currentFunctionType]);
+
+  // 获取当前聊天用于保存
+  const getCurrentChat = useCallback(() => {
+    const currentMessages = messagesByFunction[currentFunctionType] || [];
+    return {
+      messages: currentMessages,
+      functionType: currentFunctionType
+    };
+  }, [currentFunctionType, messagesByFunction]);
+
   // 重新生成消息
   const regenerateMessage = useCallback(async (messageId) => {
     try {
@@ -191,6 +214,8 @@ export const FunctionProvider = ({ children }) => {
     clearMessages,
     regenerateMessage,
     abortResponse,
+    loadHistoryChat,
+    getCurrentChat,
     
     // 常量
     VALID_FUNCTION_TYPES
