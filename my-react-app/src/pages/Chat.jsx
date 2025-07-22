@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback, useMemo, useRef } from 'react';
+import React, { useEffect, useCallback, useMemo, useRef } from 'react';
 import Sidebar from '../components/Sidebar';
 import ChatBubble from '../components/ChatBubble';
 import InputBar from '../components/InputBar';
@@ -13,7 +13,6 @@ import '../assets/styles/main.css';
 const Chat = () => {
   const { messages, currentFunctionType, setMessages } = useFunctionContext();
   const location = useLocation();
-  const [initialized, setInitialized] = useState(false);
   const { user } = useAuth();
   const { theme, toggleTheme } = useTheme();
   const chatAreaRef = useRef(null);
@@ -26,15 +25,6 @@ const Chat = () => {
     doc_qa: '📄 文档检索问答',
     game_wiki: '📚 游戏百科',
     general: '💬 通用助手'
-  }), []);
-
-  // 欢迎消息映射
-  const welcomeMessages = useMemo(() => ({
-    play: '🎮 欢迎使用游戏推荐功能！请告诉我您的游戏偏好，我会为您推荐合适的游戏。',
-    game_guide: '📖 欢迎使用攻略助手！请告诉我您需要哪个游戏的攻略。',
-    doc_qa: '📄 欢迎使用文档检索功能！请提出您的问题，我会在文档中查找答案。您也可以上传文档进行分析。',
-    game_wiki: '📚 欢迎使用游戏百科！请告诉我您想了解的游戏或相关知识点。',
-    general: '💬 您好！我是睿玩智库！有什么可以帮到您的吗？'
   }), []);
 
   // 自动滚动到底部
@@ -50,40 +40,6 @@ const Chat = () => {
     const timer = setTimeout(scrollToBottom, 100);
     return () => clearTimeout(timer);
   }, [messages, scrollToBottom]);
-
-  // 初始化欢迎消息
-  const initializeWelcomeMessage = useCallback(() => {
-    const welcomeMessage = welcomeMessages[currentFunctionType] || welcomeMessages.general;
-    
-    // 检查是否已有欢迎消息
-    const hasWelcomeMessage = messages.some(msg => 
-      msg.content === welcomeMessage && !msg.isUser
-    );
-    
-    if (!hasWelcomeMessage) {
-      setMessages([{ 
-        content: welcomeMessage, 
-        isUser: false, 
-        id: `welcome-${currentFunctionType}-${Date.now()}`,
-        timestamp: new Date().toISOString()
-      }]);
-    }
-  }, [currentFunctionType, messages, setMessages, welcomeMessages]);
-
-  // 根据功能类型变化设置欢迎消息
-  useEffect(() => {
-    if (!initialized) {
-      initializeWelcomeMessage();
-      setInitialized(true);
-    }
-  }, [initialized, initializeWelcomeMessage]);
-
-  // 路径变化时重新初始化
-  useEffect(() => {
-    if (initialized) {
-      initializeWelcomeMessage();
-    }
-  }, [location.pathname, initializeWelcomeMessage, initialized]);
 
   // 功能描述信息
   const functionDescription = useMemo(() => {

@@ -18,6 +18,9 @@ export const FunctionProvider = ({ children }) => {
   // 用于控制流式响应的中止
   const abortControllerRef = useRef(null);
   
+  // 跟踪当前聊天是否是从历史记录加载的（用于防止重复保存）
+  const [isCurrentChatFromHistory, setIsCurrentChatFromHistory] = useState(false);
+  
   // 每个功能独立的消息历史
   const [messagesByFunction, setMessagesByFunction] = useState({
     general: [],
@@ -58,6 +61,8 @@ export const FunctionProvider = ({ children }) => {
       ...prev,
       [currentFunctionType]: [...(prev[currentFunctionType] || []), message]
     }));
+    // 添加新消息时重置历史记录标记，表示聊天已变成新对话
+    setIsCurrentChatFromHistory(false);
   }, [currentFunctionType]);
 
   // 清空当前功能的消息
@@ -66,7 +71,14 @@ export const FunctionProvider = ({ children }) => {
       ...prev,
       [currentFunctionType]: []
     }));
+    // 清空消息时重置历史记录标记，表示开始新对话
+    setIsCurrentChatFromHistory(false);
   }, [currentFunctionType]);
+
+  // 重置历史记录标记（当用户开始新对话或发送新消息时）
+  const markChatAsNew = useCallback(() => {
+    setIsCurrentChatFromHistory(false);
+  }, []);
 
   // 设置当前功能的消息
   const setMessages = useCallback((messagesOrUpdater) => {
@@ -95,6 +107,9 @@ export const FunctionProvider = ({ children }) => {
       ...prev,
       [history.functionType]: history.messages
     }));
+    
+    // 标记当前聊天是从历史记录加载的，防止重复保存
+    setIsCurrentChatFromHistory(true);
   }, [currentFunctionType]);
 
   // 获取当前聊天用于保存
@@ -104,6 +119,13 @@ export const FunctionProvider = ({ children }) => {
       messages: currentMessages,
       functionType: currentFunctionType
     };
+  }, [currentFunctionType, messagesByFunction]);
+
+  // 检查是否有真正的用户对话（现在不再有欢迎语，所以只需检查是否有用户消息）
+  const hasRealUserConversation = useCallback(() => {
+    const currentMessages = messagesByFunction[currentFunctionType] || [];
+    // 检查是否有用户发送的消息
+    return currentMessages.some(msg => msg.isUser === true);
   }, [currentFunctionType, messagesByFunction]);
 
   // 重新生成消息
@@ -205,6 +227,7 @@ export const FunctionProvider = ({ children }) => {
     messages,
     isLoading,
     messagesByFunction,
+    isCurrentChatFromHistory,
     
     // 操作方法
     setCurrentFunctionType,
@@ -216,6 +239,8 @@ export const FunctionProvider = ({ children }) => {
     abortResponse,
     loadHistoryChat,
     getCurrentChat,
+    markChatAsNew,
+    hasRealUserConversation,
     
     // 常量
     VALID_FUNCTION_TYPES

@@ -14,7 +14,10 @@ const Sidebar = () => {
         clearMessages, 
         VALID_FUNCTION_TYPES, 
         currentFunctionType,
-        getCurrentChat
+        getCurrentChat,
+        loadHistoryChat,
+        isCurrentChatFromHistory,
+        hasRealUserConversation
     } = useFunctionContext();
     const { user, logout } = useAuth();
     const [sessionInfo, setSessionInfo] = useState(null);
@@ -29,11 +32,13 @@ const Sidebar = () => {
     // 开启新对话（保存当前聊天并清除记忆）
     const handleStartNewChat = useCallback(async () => {
         try {
-            // 先保存当前聊天记录（如果有内容）
-            const currentChat = getCurrentChat();
-            if (currentChat.messages.length > 0) {
+            // 只有当有真正的用户对话时才保存
+            if (hasRealUserConversation()) {
+                const currentChat = getCurrentChat();
                 saveChatHistory(currentChat.messages, currentChat.functionType);
                 console.log('当前聊天已自动保存到历史记录');
+            } else {
+                console.log('没有真正的用户对话，跳过保存');
             }
             
             // 清除前端消息
@@ -47,7 +52,7 @@ const Sidebar = () => {
             console.error('开启新对话失败:', error);
             alert('开启新对话失败，请重试');
         }
-    }, [clearMessages, currentFunctionType, getCurrentChat]);
+    }, [clearMessages, currentFunctionType, getCurrentChat, hasRealUserConversation]);
 
     // 清除用户会话
     const handleClearUserSession = useCallback(() => {
@@ -60,17 +65,6 @@ const Sidebar = () => {
         }
     }, [clearMessages]);
 
-    // 保存当前聊天为历史记录
-    const handleSaveCurrentChat = useCallback(() => {
-        const currentChat = getCurrentChat();
-        if (currentChat.messages.length > 0) {
-            saveChatHistory(currentChat.messages, currentChat.functionType);
-            alert('当前聊天已保存到历史记录');
-        } else {
-            alert('当前没有聊天内容可保存');
-        }
-    }, [getCurrentChat]);
-
     // 打开历史聊天
     const handleOpenChatHistory = useCallback(() => {
         setShowChatHistory(true);
@@ -80,6 +74,23 @@ const Sidebar = () => {
     const handleCloseChatHistory = useCallback(() => {
         setShowChatHistory(false);
     }, []);
+
+    // 处理加载历史聊天（解决无限叠加问题的关键）
+    const handleLoadHistoryChat = useCallback((history) => {
+        // 加载历史记录时不自动保存当前聊天，避免无限叠加
+        // 因为历史记录本身就是已保存的内容，不需要重复保存
+        
+        // 直接加载选中的历史聊天
+        loadHistoryChat(history);
+        
+        // 导航到对应的功能页面
+        navigate(`/${history.functionType}`);
+        
+        // 关闭历史记录模态框
+        setShowChatHistory(false);
+        
+        console.log('已加载历史聊天记录:', history.title);
+    }, [loadHistoryChat, navigate]);
 
     // 菜单项配置
     const menuItems = useMemo(() => [
@@ -115,7 +126,7 @@ const Sidebar = () => {
         }
     ], []);
 
-    // 处理菜单项点击
+    // 处理菜单项点击（增加智能自动保存逻辑）
     const handleMenuItemClick = useCallback(async (functionType, e) => {
         e.preventDefault();
         
@@ -128,6 +139,21 @@ const Sidebar = () => {
         try {
             console.log(`🔄 切换到功能: ${functionType}`);
             
+            // 只有在切换到不同的功能时才自动保存当前聊天
+            // 并且只有当前聊天不是从历史记录加载时才保存
+            // 并且只有当有真正的用户对话时才保存
+            if (currentFunctionType && currentFunctionType !== functionType) {
+                if (!isCurrentChatFromHistory && hasRealUserConversation()) {
+                    const currentChat = getCurrentChat();
+                    saveChatHistory(currentChat.messages, currentChat.functionType);
+                    console.log('切换功能时自动保存了当前聊天');
+                } else if (isCurrentChatFromHistory) {
+                    console.log('当前聊天是从历史记录加载的，跳过自动保存');
+                } else if (!hasRealUserConversation()) {
+                    console.log('没有真正的用户对话，跳过自动保存');
+                }
+            }
+            
             // 设置新的功能类型并导航
             setCurrentFunctionType(functionType);
             navigate(`/${functionType}`);
@@ -136,7 +162,7 @@ const Sidebar = () => {
         } catch (error) {
             console.error('❌ 切换功能失败:', error);
         }
-    }, [VALID_FUNCTION_TYPES, setCurrentFunctionType, navigate]);
+    }, [VALID_FUNCTION_TYPES, setCurrentFunctionType, navigate, currentFunctionType, getCurrentChat, isCurrentChatFromHistory, hasRealUserConversation]);
 
     // 处理退出登录
     const handleLogout = useCallback(() => {
@@ -194,13 +220,6 @@ const Sidebar = () => {
                     >
                         📚 聊天历史
                     </button>
-                    <button 
-                        className="save-chat-btn"
-                        onClick={handleSaveCurrentChat}
-                        title="保存当前聊天"
-                    >
-                        💾 保存聊天
-                    </button>
                 </div>
             )}
 
@@ -228,6 +247,7 @@ const Sidebar = () => {
         <ChatHistory 
             isOpen={showChatHistory}
             onClose={handleCloseChatHistory}
+            onLoadChat={handleLoadHistoryChat}
         />
         </>
     );

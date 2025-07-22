@@ -3,7 +3,7 @@ import { chatHistoryManager } from '../utils/chatHistory';
 import { useFunctionContext } from '../context/FunctionContext';
 import '../assets/styles/components/chat-history.css';
 
-const ChatHistory = ({ isOpen, onClose }) => {
+const ChatHistory = ({ isOpen, onClose, onLoadChat }) => {
   const [histories, setHistories] = useState([]);
   const [filteredHistories, setFilteredHistories] = useState([]);
   const [searchKeyword, setSearchKeyword] = useState('');
@@ -68,9 +68,18 @@ const ChatHistory = ({ isOpen, onClose }) => {
     filterHistories();
   }, [filterHistories]);
 
+  // 处理聊天加载
+  const handleLoadChat = (history) => {
+    if (onLoadChat) {
+      onLoadChat(history);
+      onClose();
+    }
+  };
+
   // 删除聊天记录
   const handleDeleteChat = (e, chatId) => {
     e.stopPropagation();
+    e.preventDefault();
     if (confirm('确定要删除这个聊天记录吗？')) {
       chatHistoryManager.deleteChat(chatId);
       loadHistories();
@@ -174,16 +183,19 @@ const ChatHistory = ({ isOpen, onClose }) => {
               <div
                 key={history.id}
                 className="history-item"
+                onClick={() => handleLoadChat(history)}
               >
+                {/* 删除按钮放在右上角 */}
+                <button
+                  className="delete-btn"
+                  onClick={(e) => handleDeleteChat(e, history.id)}
+                  title="删除"
+                >
+                  🗑️
+                </button>
+                
                 <div className="history-header">
                   <span className="history-title">{history.title}</span>
-                  <button
-                    className="delete-btn"
-                    onClick={(e) => handleDeleteChat(e, history.id)}
-                    title="删除"
-                  >
-                    🗑️
-                  </button>
                 </div>
                 
                 <div className="history-meta">
