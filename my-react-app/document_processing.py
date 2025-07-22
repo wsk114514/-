@@ -103,23 +103,11 @@ def init_embeddings():
         except Exception as ollama_error:
             logger.warning(f"Ollama 嵌入不可用: {ollama_error}")
         
-        # 如果 Ollama 不可用，使用假的嵌入（仅用于测试）
-        logger.warning("使用假嵌入模型（仅用于测试）")
-        return FakeEmbeddings()
         
     except Exception as e:
         logger.error(f"嵌入模型初始化失败: {str(e)}")
         raise
 
-class FakeEmbeddings:
-    """假嵌入类，用于测试目的"""
-    def embed_documents(self, texts):
-        # 返回固定长度的假向量
-        return [[0.1] * 384 for _ in texts]
-    
-    def embed_query(self, text):
-        # 返回固定长度的假向量
-        return [0.1] * 384
 
 def cleanup_vector_stores():
     """清理所有活跃的向量存储连接"""
