@@ -110,7 +110,10 @@ const Sidebar = () => {
     return (
         <aside className="sidebar">
             {/* Logo */}
-            <div className="logo">睿玩智库</div>
+            <div className="logo">
+                <img src="/logo.png" alt="睿玩智库logo" className="logo-image" />
+                睿玩智库
+            </div>
             
             {/* 用户信息 */}
             {user && (

@@ -99,9 +99,19 @@ body {
     font-size: 2.3em;
     font-weight: bold;
     color: #fff;
-    text-align: center;
     margin-bottom: 32px;
     letter-spacing: 2px;
+    display: flex;
+    align-items: center;
+    padding-left: 24px; /* 与侧边栏内边距保持一致 */
+}
+
+/* Logo图片样式 */
+.logo-image {
+    width: 32px;
+    height: 32px;
+    margin-right: 12px;
+    object-fit: contain;
 }
 
 /* 导航菜单样式 */
