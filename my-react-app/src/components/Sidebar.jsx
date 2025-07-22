@@ -142,22 +142,7 @@ const Sidebar = () => {
                 ))}
             </nav>
             
-            {/* 用户会话信息 */}
-            {sessionInfo && (
-                <div className="session-info">
-                    <div className="session-title">当前会话</div>
-                    <div className="user-id">
-                        用户ID: {sessionInfo.userId.substring(0, 8)}...
-                    </div>
-                    <button 
-                        className="clear-session-btn"
-                        onClick={handleClearUserSession}
-                        title="重置用户会话"
-                    >
-                        重置会话
-                    </button>
-                </div>
-            )}
+
             
             {/* 底部功能按钮 */}
             {user && (
