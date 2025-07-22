@@ -5,6 +5,8 @@ import { ThemeProvider } from './context/ThemeContext';
 import ErrorBoundary from './components/ErrorBoundary';
 import Login from './pages/Login';
 import Register from './pages/Register';
+import Welcome from './pages/Welcome';
+import PublicWelcome from './pages/PublicWelcome';
 import Chat from './pages/Chat';
 import ProtectedRoute from './components/ProtectedRoute';
 import './assets/styles/main.css';
@@ -17,8 +19,17 @@ function App() {
           <AuthProvider>
             <FunctionProvider>
               <Routes>
-                <Route path="/" element={<Login />} />
+                <Route path="/login" element={<Login />} />
                 <Route path="/register" element={<Register />} />
+                <Route path="/" element={<PublicWelcome />} />
+                <Route 
+                  path="/welcome" 
+                  element={
+                    <ProtectedRoute>
+                      <Welcome />
+                    </ProtectedRoute>
+                  } 
+                />
                 <Route 
                   path="/chat" 
                   element={
@@ -28,7 +39,7 @@ function App() {
                   } 
                 />
                 <Route 
-                  path="/:functionType?" 
+                  path="/:functionType" 
                   element={
                     <ProtectedRoute>
                       <Chat />

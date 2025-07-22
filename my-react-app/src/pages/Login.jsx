@@ -12,18 +12,32 @@ const Login = () => {
   const location = useLocation();
   const { login } = useAuth();
 
-  // 从状态中获取重定向路径，默认重定向到通用助手
-  const from = location.state?.from?.pathname || '/general';
+  // 从状态中获取重定向路径，默认重定向到欢迎页面
+  const from = location.state?.from?.pathname || '/welcome';
 
   // 随机背景图片逻辑
   useEffect(() => {
     const bgCount = 6;
     const idx = Math.floor(Math.random() * bgCount) + 1;
     const imgUrl = `/background${idx}.png`;
+    
+    // 设置背景图片，确保能覆盖其他页面的样式
     document.documentElement.style.background = `url('${imgUrl}') no-repeat center center fixed`;
     document.documentElement.style.backgroundSize = 'cover';
     document.body.style.background = `url('${imgUrl}') no-repeat center center fixed`;
     document.body.style.backgroundSize = 'cover';
+    
+    // 确保页面可以正常滚动
+    document.body.style.overflow = 'auto';
+    document.documentElement.style.overflow = 'auto';
+    
+    // 清理函数，组件卸载时清除背景
+    return () => {
+      document.documentElement.style.background = '';
+      document.documentElement.style.backgroundSize = '';
+      document.body.style.background = '';
+      document.body.style.backgroundSize = '';
+    };
   }, []);
 
   const handleSubmit = async (e) => {

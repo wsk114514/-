@@ -1,118 +1,177 @@
-.register-container {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    min-width: 360px;
-    max-width: 400px;
-    width: 100%;
-    background: rgba(255,255,255,0.46); /* 再降低30%透明度 */
-    border-radius: 18px;
-    box-shadow: 0 6px 32px rgba(0,0,0,0.10);
-    padding: 36px 32px 28px 32px;
-}
+/* 注册页面样式 */
 
-html, body {
+/* 注册页面外层容器 */
+.register-page {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    width: 100vw;
     height: 100vh;
-    margin: 0;
-    padding: 0;
-}
-
-body {
-    /* 页面居中显示，字体设置 */
     display: flex;
     align-items: center;
     justify-content: center;
-    font-family: 'Segoe UI', 'Microsoft YaHei', Arial, sans-serif; /* 优先中文字体 */
-    /* 背景由JS动态设置 */
+    z-index: 2000;
+    overflow-y: auto;
+    padding: 2rem;
+    box-sizing: border-box;
 }
 
-form {
-    /* 半透明白色卡片容器，圆角和阴影 */
-    background: rgba(255,255,255,0.46);
-    padding: 32px 40px;
-    border-radius: 16px;
-    box-shadow: 0 4px 24px rgba(0,0,0,0.10);
-    display: flex;
-    flex-direction: column;
-    gap: 18px; /* 表单项间距 */
-    min-width: 320px;
+/* 注册表单容器 */
+.register-container {
+    width: 100%;
+    max-width: 420px;
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(20px);
+    border-radius: 24px;
+    padding: 3rem 2.5rem;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    animation: slideInUp 0.6s ease-out;
 }
 
-h2 {
-    /* 标题居中与颜色 */
+/* 标题样式 */
+.register-container h2 {
     text-align: center;
-    color: #3a3a3a;
-    margin-bottom: 18px;
-    font-size: 2.2em;
+    color: #333;
+    margin-bottom: 2rem;
+    font-size: 2rem;
+    font-weight: 600;
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.1);
 }
 
-label {
-    /* 标签纵向排列 */
+/* 表单样式 */
+.register-container form {
+    width: 100%;
     display: flex;
     flex-direction: column;
-    font-size: 15px;
+    gap: 1.5rem;
+}
+
+/* 表单分组样式 */
+.register-container .form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.register-container .form-group label {
+    font-size: 0.95rem;
+    font-weight: 500;
     color: #555;
-    margin-bottom: 8px;
+    margin-bottom: 0;
 }
 
-input[type="text"], input[type="password"] {
-    /* 输入框样式 */
-    margin-top: 6px;
-    padding: 10px 12px;
-    border: 1px solid #cfd8dc;
-    border-radius: 6px;
-    font-size: 15px;
-    transition: border 0.2s;
+/* 输入框样式 */
+.register-container .form-group input[type="text"],
+.register-container .form-group input[type="password"] {
+    width: 100%;
+    padding: 1rem;
+    border: 2px solid #e0e0e0;
+    border-radius: 12px;
+    font-size: 1rem;
+    transition: all 0.3s ease;
+    background: rgba(255, 255, 255, 0.9);
     outline: none;
+    box-sizing: border-box;
+    margin: 0;
 }
 
-input[type="text"]:focus, input[type="password"]:focus {
-    /* 输入框聚焦高亮 */
-    border: 1.5px solid #7eb6ff;
+.register-container .form-group input[type="text"]:focus,
+.register-container .form-group input[type="password"]:focus {
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    background: rgba(255, 255, 255, 1);
 }
 
-button[type="submit"] {
-    /* 渐变色按钮，圆角，阴影 */
-    background: linear-gradient(90deg, #7eb6ff 0%, #5e9bfc 100%);
-    color: #fff;
+/* 按钮样式 */
+.register-container button[type="submit"] {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
     border: none;
-    border-radius: 6px;
-    padding: 12px 0;
-    font-size: 16px;
-    font-weight: bold;
+    border-radius: 12px;
+    padding: 1rem;
+    font-size: 1.1rem;
+    font-weight: 600;
     cursor: pointer;
-    transition: background 0.2s, box-shadow 0.2s;
-    box-shadow: 0 2px 8px rgba(94,155,252,0.08);
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+    margin-top: 0.5rem;
 }
 
-button[type="submit"]:hover {
-    /* 按钮悬停渐变反转 */
-    background: linear-gradient(90deg, #5e9bfc 0%, #7eb6ff 100%);
+.register-container button[type="submit"]:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(102, 126, 234, 0.6);
 }
 
-p {
-    /* 提示文字居中与颜色 */
+.register-container button[type="submit"]:active {
+    transform: translateY(0);
+}
+
+/* 链接样式 */
+.register-container p {
     text-align: center;
     color: #666;
-    margin-top: 18px;
-    font-size: 14px;
+    margin-top: 1.5rem;
+    font-size: 0.95rem;
 }
 
-a {
-    /* 链接颜色与过渡效果 */
-    color: #5e9bfc;
+.register-container a {
+    color: #667eea;
     text-decoration: none;
-    transition: text-decoration 0.2s;
+    font-weight: 500;
+    transition: all 0.3s ease;
 }
 
-a:hover {
-    /* 链接悬停下划线 */
+.register-container a:hover {
+    color: #764ba2;
     text-decoration: underline;
 }
 
-form label:first-of-type {
-    background: rgba(255,255,255,0.25); /* 更低透明度 */
-    border-radius: 8px;
-    padding: 8px 0 8px 8px;
+/* 错误信息样式 */
+.register-container p[style*="color: red"] {
+    background: rgba(244, 67, 54, 0.1);
+    color: #d32f2f !important;
+    padding: 1rem;
+    border-radius: 12px;
+    margin-bottom: 1rem;
+    text-align: center;
+    font-size: 0.9rem;
+    border: 1px solid rgba(244, 67, 54, 0.2);
+}
+
+/* 动画效果 */
+@keyframes slideInUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+    .register-page {
+        padding: 1rem;
+    }
+    
+    .register-container {
+        padding: 2rem 1.5rem;
+        margin: 0 1rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .register-container {
+        padding: 1.5rem 1rem;
+        margin: 0 0.5rem;
+    }
+    
+    .register-container h2 {
+        font-size: 1.5rem;
+    }
 }

@@ -17,6 +17,10 @@ main.css - 主样式入口文件
 @import './components/chat-history.css';
 @import './components/theme-toggle.css';
 
+/* ========== 页面样式导入 ========== */
+@import './pages/Welcome.css';
+@import './pages/PublicWelcome.css';
+
 /* ========== 工具样式导入 ========== */
 @import './utils/responsive.css';
 @import './utils/animations.css';

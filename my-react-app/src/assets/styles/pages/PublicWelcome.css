@@ -1,0 +1,386 @@
+/* 公共欢迎页面样式 */
+
+/* 重置全局样式，确保公共欢迎页面能正常显示 */
+.public-welcome-container {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    width: 100vw;
+    height: 100vh;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 2rem;
+    /* 背景由JavaScript设置随机图片 */
+    overflow-y: auto;
+    overflow-x: hidden;
+    z-index: 1000;
+}
+
+/* 确保内容容器能正常显示 */
+.public-welcome-content {
+    max-width: 1200px;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 3rem;
+    position: relative;
+    z-index: 1001;
+    /* 确保内容在最前面 */
+    background: transparent;
+}
+
+.public-welcome-header {
+    text-align: center;
+    margin-bottom: 2rem;
+}
+
+.public-welcome-logo {
+    width: 120px;
+    height: 120px;
+    margin-bottom: 1.5rem;
+    border-radius: 50%;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+    transition: transform 0.3s ease;
+}
+
+.public-welcome-logo:hover {
+    transform: scale(1.05);
+}
+
+.public-welcome-title {
+    font-size: 3.5rem;
+    font-weight: bold;
+    color: white;
+    margin: 0 0 0.5rem 0;
+    text-shadow: 2px 2px 8px rgba(0, 0, 0, 0.7), 1px 1px 4px rgba(0, 0, 0, 0.5);
+    animation: fadeInUp 1s ease-out;
+}
+
+.public-welcome-subtitle {
+    font-size: 1.5rem;
+    color: rgba(255, 255, 255, 0.95);
+    margin: 0;
+    font-weight: 300;
+    text-shadow: 1px 1px 4px rgba(0, 0, 0, 0.6);
+    animation: fadeInUp 1s ease-out 0.2s both;
+}
+
+/* 登录提示区域 */
+.login-prompt {
+    background: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(10px);
+    border-radius: 20px;
+    padding: 2.5rem;
+    text-align: center;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    animation: fadeInUp 1s ease-out 0.4s both;
+}
+
+.login-prompt h2 {
+    color: white;
+    margin-bottom: 1rem;
+    font-size: 2rem;
+    font-weight: 600;
+}
+
+.login-prompt p {
+    color: rgba(255, 255, 255, 0.9);
+    margin-bottom: 2rem;
+    font-size: 1.1rem;
+}
+
+/* 认证按钮 */
+.auth-buttons {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+.login-btn,
+.register-btn {
+    padding: 1rem 2rem;
+    border: none;
+    border-radius: 50px;
+    font-size: 1.1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 140px;
+}
+
+.login-btn.primary {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+}
+
+.login-btn.primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(102, 126, 234, 0.6);
+}
+
+.register-btn.secondary {
+    background: transparent;
+    color: white;
+    border: 2px solid white;
+}
+
+.register-btn.secondary:hover {
+    background: white;
+    color: #333;
+    transform: translateY(-2px);
+}
+
+/* 功能预览区域 */
+.functions-preview {
+    width: 100%;
+    text-align: center;
+}
+
+.functions-preview h3 {
+    color: white;
+    font-size: 2rem;
+    margin-bottom: 2rem;
+    text-shadow: 2px 2px 8px rgba(0, 0, 0, 0.7), 1px 1px 4px rgba(0, 0, 0, 0.5);
+    animation: fadeInUp 1s ease-out 0.6s both;
+}
+
+.functions-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 2rem;
+    margin-bottom: 2rem;
+    max-width: 1200px;
+    margin-left: auto;
+    margin-right: auto;
+    justify-items: center;
+}
+
+/* 功能卡片预览样式 */
+.function-card.preview {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    border-radius: 20px;
+    padding: 2rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    border: 2px solid transparent;
+    position: relative;
+    overflow: hidden;
+    animation: fadeInUp 1s ease-out calc(0.8s + var(--delay, 0s)) both;
+    height: 180px;
+    width: 100%;
+    max-width: 320px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+}
+
+.function-card.preview:nth-child(1) { --delay: 0s; }
+.function-card.preview:nth-child(2) { --delay: 0.1s; }
+.function-card.preview:nth-child(3) { --delay: 0.2s; }
+.function-card.preview:nth-child(4) { --delay: 0.3s; }
+.function-card.preview:nth-child(5) { --delay: 0.4s; }
+
+.function-card.preview:hover {
+    transform: translateY(-8px);
+    border-color: var(--card-color, #667eea);
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.15);
+}
+
+.function-card.preview::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: var(--card-color, #667eea);
+    transform: scaleX(0);
+    transition: transform 0.3s ease;
+}
+
+.function-card.preview:hover::before {
+    transform: scaleX(1);
+}
+
+.function-card-content {
+    position: relative;
+    z-index: 2;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    height: 100%;
+    justify-content: center;
+}
+
+.function-title {
+    color: var(--text-primary, #333);
+    margin-bottom: 1rem;
+    font-size: 1.3rem;
+    font-weight: 600;
+    line-height: 1.2;
+}
+
+.function-description {
+    color: var(--text-secondary, #666);
+    line-height: 1.5;
+    font-size: 0.95rem;
+    margin: 0;
+}
+
+/* 卡片覆盖层 */
+.card-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(135deg, 
+        var(--card-color, #667eea) 0%, 
+        rgba(var(--card-color-rgb, 102, 126, 234), 0.9) 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    border-radius: 20px;
+}
+
+.function-card.preview:hover .card-overlay {
+    opacity: 1;
+}
+
+.login-hint {
+    color: white;
+    font-size: 1.2rem;
+    font-weight: 600;
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
+}
+
+/* 底部说明 */
+.public-welcome-footer {
+    text-align: center;
+    animation: fadeInUp 1s ease-out 1.2s both;
+}
+
+.public-welcome-footer p {
+    color: rgba(255, 255, 255, 0.9);
+    font-size: 1rem;
+    margin: 0;
+    font-style: italic;
+    text-shadow: 1px 1px 4px rgba(0, 0, 0, 0.6);
+}
+
+/* 动画定义 */
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* 响应式设计 */
+@media (max-width: 1200px) {
+    .functions-grid {
+        grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+        max-width: 900px;
+    }
+}
+
+@media (max-width: 768px) {
+    .public-welcome-container {
+        padding: 1rem;
+    }
+    
+    .public-welcome-title {
+        font-size: 2.5rem;
+    }
+    
+    .public-welcome-subtitle {
+        font-size: 1.2rem;
+    }
+    
+    .login-prompt {
+        padding: 2rem;
+        margin: 0 1rem;
+    }
+    
+    .auth-buttons {
+        flex-direction: column;
+        align-items: center;
+    }
+    
+    .functions-grid {
+        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+        gap: 1.5rem;
+        padding: 0 1rem;
+        max-width: 600px;
+    }
+    
+    .function-card.preview {
+        padding: 1.5rem;
+        max-width: 280px;
+    }
+}
+
+@media (max-width: 480px) {
+    .public-welcome-container {
+        padding: 0.5rem;
+    }
+    
+    .public-welcome-title {
+        font-size: 2rem;
+    }
+    
+    .public-welcome-subtitle {
+        font-size: 1rem;
+    }
+    
+    .login-prompt {
+        padding: 1.5rem;
+        margin: 0 0.5rem;
+    }
+    
+    .login-prompt h2 {
+        font-size: 1.5rem;
+    }
+    
+    .login-btn,
+    .register-btn {
+        padding: 0.8rem 1.5rem;
+        font-size: 1rem;
+        width: 100%;
+        max-width: 200px;
+    }
+    
+    .functions-grid {
+        grid-template-columns: 1fr;
+        padding: 0 0.5rem;
+        max-width: 100%;
+    }
+    
+    .function-card.preview {
+        padding: 1rem;
+        max-width: 100%;
+        height: 160px;
+    }
+}

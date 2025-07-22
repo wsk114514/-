@@ -12,7 +12,7 @@ const ProtectedRoute = ({ children }) => {
 
   if (!isAuthenticated) {
     // 重定向到登录页面，并记录当前路径以便登录后返回
-    return <Navigate to="/" state={{ from: location }} replace />;
+    return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
   return children;
