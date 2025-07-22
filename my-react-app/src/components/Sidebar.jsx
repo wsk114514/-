@@ -1,13 +1,21 @@
-import React, { useCallback, useMemo } from 'react';
+import React, { useCallback, useMemo, useState, useEffect } from 'react';
 import { useFunctionContext } from '../context/FunctionContext';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { clearFunctionMemory } from '../services/api';
+import { getCurrentUserId, getSessionInfo, clearUserSession } from '../utils/userSession';
 
 const Sidebar = () => {
     const navigate = useNavigate();
     const { setCurrentFunctionType, clearMessages, VALID_FUNCTION_TYPES, currentFunctionType } = useFunctionContext();
     const { user, logout } = useAuth();
+    const [sessionInfo, setSessionInfo] = useState(null);
+
+    // 获取会话信息
+    useEffect(() => {
+        const info = getSessionInfo();
+        setSessionInfo(info);
+    }, []);
 
     // 手动清除当前功能记忆
     const handleClearCurrentMemory = useCallback(async () => {
@@ -20,6 +28,17 @@ const Sidebar = () => {
             alert('清除记忆失败，请重试');
         }
     }, [clearMessages, currentFunctionType]);
+
+    // 清除用户会话
+    const handleClearUserSession = useCallback(() => {
+        if (confirm('确定要清除当前用户会话吗？这将清除所有对话记忆。')) {
+            clearUserSession();
+            clearMessages();
+            const newInfo = getSessionInfo();
+            setSessionInfo(newInfo);
+            alert('用户会话已重置');
+        }
+    }, [clearMessages]);
 
     // 菜单项配置
     const menuItems = useMemo(() => [
@@ -119,6 +138,23 @@ const Sidebar = () => {
                     </a>
                 ))}
             </nav>
+            
+            {/* 用户会话信息 */}
+            {sessionInfo && (
+                <div className="session-info">
+                    <div className="session-title">当前会话</div>
+                    <div className="user-id">
+                        用户ID: {sessionInfo.userId.substring(0, 8)}...
+                    </div>
+                    <button 
+                        className="clear-session-btn"
+                        onClick={handleClearUserSession}
+                        title="重置用户会话"
+                    >
+                        重置会话
+                    </button>
+                </div>
+            )}
             
             {/* 底部功能按钮 */}
             {user && (

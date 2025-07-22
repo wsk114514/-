@@ -132,7 +132,7 @@ async def chat_endpoint(req: ChatRequest):
         
         # 获取功能特定的系统
         system = get_llm_system(req.function)
-        response = get_response(message, system, req.function)
+        response = get_response(message, system, req.function, req.user_id)
         return ChatResponse(response=response)
         
     except Exception as e:
@@ -160,7 +160,7 @@ async def chat_stream_endpoint(req: ChatRequest):
         async def generate():
             """生成流式响应"""
             try:
-                async for chunk in get_response_stream(message, system, req.function):
+                async for chunk in get_response_stream(message, system, req.function, req.user_id):
                     yield f"data: {json.dumps({'content': chunk}, ensure_ascii=False)}\n\n"
                 yield f"data: [DONE]\n\n"
             except Exception as e:
@@ -188,21 +188,21 @@ async def chat_stream_endpoint(req: ChatRequest):
 # === 记忆管理端点 ===
 
 @app.post("/memory/clear", response_model=SuccessResponse)
-async def clear_memory_endpoint(function_type: str = "current"):
+async def clear_memory_endpoint(function_type: str = "current", user_id: str = "default"):
     """清除记忆端点"""
     try:
         if function_type == "current":
             # 向后兼容：清除默认系统记忆
             system = get_llm_system("general")
-            clear_memory(system)
-            logger.info("当前记忆已清除")
-            return SuccessResponse(message="当前记忆已清除")
+            clear_memory(system, user_id=user_id)
+            logger.info(f"用户 {user_id} 的当前记忆已清除")
+            return SuccessResponse(message=f"用户 {user_id} 的当前记忆已清除")
         else:
             # 清除指定功能的记忆
             from llm_chain import clear_memory_for_function
-            clear_memory_for_function(function_type)
-            logger.info(f"功能 {function_type} 的记忆已清除")
-            return SuccessResponse(message=f"功能 {function_type} 的记忆已清除")
+            clear_memory_for_function(function_type, user_id)
+            logger.info(f"用户 {user_id} 的功能 {function_type} 记忆已清除")
+            return SuccessResponse(message=f"用户 {user_id} 的功能 {function_type} 记忆已清除")
     except Exception as e:
         logger.error(f"清除记忆失败: {str(e)}")
         return JSONResponse(
@@ -211,18 +211,47 @@ async def clear_memory_endpoint(function_type: str = "current"):
         )
 
 @app.post("/memory/clear/{function_type}", response_model=SuccessResponse)
-async def clear_function_memory_endpoint(function_type: str):
+async def clear_function_memory_endpoint(function_type: str, user_id: str = "default"):
     """清除指定功能记忆端点"""
     try:
         from llm_chain import clear_memory_for_function
-        clear_memory_for_function(function_type)
-        logger.info(f"功能 {function_type} 的记忆已清除")
-        return SuccessResponse(message=f"功能 {function_type} 的记忆已清除")
+        clear_memory_for_function(function_type, user_id)
+        logger.info(f"用户 {user_id} 的功能 {function_type} 记忆已清除")
+        return SuccessResponse(message=f"用户 {user_id} 的功能 {function_type} 记忆已清除")
     except Exception as e:
         logger.error(f"清除记忆失败: {str(e)}")
         return JSONResponse(
             status_code=500,
             content={"error": f"清除记忆失败: {str(e)}"}
+        )
+
+@app.post("/memory/clear_user/{user_id}", response_model=SuccessResponse)
+async def clear_user_memory_endpoint(user_id: str):
+    """清除指定用户的所有记忆"""
+    try:
+        from llm_chain import clear_all_user_memories
+        clear_all_user_memories(user_id)
+        logger.info(f"用户 {user_id} 的所有记忆已清除")
+        return SuccessResponse(message=f"用户 {user_id} 的所有记忆已清除")
+    except Exception as e:
+        logger.error(f"清除用户记忆失败: {str(e)}")
+        return JSONResponse(
+            status_code=500,
+            content={"error": f"清除用户记忆失败: {str(e)}"}
+        )
+
+@app.get("/memory/users", response_model=dict)
+async def get_active_users():
+    """获取当前活跃用户数量"""
+    try:
+        from llm_chain import get_active_users_count
+        count = get_active_users_count()
+        return {"active_users": count, "message": f"当前有 {count} 个活跃用户"}
+    except Exception as e:
+        logger.error(f"获取活跃用户数量失败: {str(e)}")
+        return JSONResponse(
+            status_code=500,
+            content={"error": f"获取活跃用户数量失败: {str(e)}"}
         )
 
 # === 测试端点 ===

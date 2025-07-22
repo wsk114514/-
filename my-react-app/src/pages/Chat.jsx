@@ -6,6 +6,7 @@ import { useFunctionContext } from '../context/FunctionContext';
 import { useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
+import { getCurrentUserId, getSessionInfo } from '../utils/userSession';
 import '../assets/styles/main.css';
 
 const Chat = () => {

@@ -94,7 +94,7 @@ async function fetchWithRetry(url, options = {}, maxAttempts = API_CONFIG.RETRY_
 }
 
 // 标准聊天 API（已废弃，但保留兼容性）
-export async function getResponse(message, function_type) {
+export async function getResponse(message, function_type, user_id = 'default') {
   try {
     const response = await fetchWithRetry('/app', {
       method: 'POST',
@@ -103,7 +103,8 @@ export async function getResponse(message, function_type) {
       },
       body: JSON.stringify({
         message: message,
-        function: function_type
+        function: function_type,
+        user_id: user_id
       }),
     });
 
@@ -118,7 +119,7 @@ export async function getResponse(message, function_type) {
 }
 
 // 流式响应 API
-export async function getResponseStream(message, function_type, onChunk, abortController = null) {
+export async function getResponseStream(message, function_type, onChunk, abortController = null, user_id = 'default') {
   if (!onChunk || typeof onChunk !== 'function') {
     throw new APIError('onChunk 回调函数是必需的', 0);
   }
@@ -131,7 +132,8 @@ export async function getResponseStream(message, function_type, onChunk, abortCo
       },
       body: JSON.stringify({
         message: message,
-        function: function_type
+        function: function_type,
+        user_id: user_id
       }),
     };
 

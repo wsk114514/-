@@ -7,6 +7,7 @@ class ChatRequest(BaseModel):
     """聊天请求模型"""
     message: str
     function: str
+    user_id: Optional[str] = "default"  # 添加用户ID支持
 
 class ChatResponse(BaseModel):
     """聊天响应模型"""

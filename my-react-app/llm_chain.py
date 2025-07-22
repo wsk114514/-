@@ -36,37 +36,59 @@ def init_memory():
         memory_key="chat_history"
     )
 
-# 全局记忆存储 - 按功能类型分别存储
-memory_by_function = {
-    "general": None,
-    "play": None,
-    "game_guide": None,
-    "doc_qa": None,
-    "game_wiki": None
-}
+# 全局记忆存储 - 按用户ID和功能类型分别存储
+# 结构: {user_id: {function_type: memory_object}}
+memory_by_user_and_function = {}
 
-def get_memory_for_function(function_type):
-    """获取指定功能的记忆对象"""
-    global memory_by_function
-    if memory_by_function[function_type] is None:
-        memory_by_function[function_type] = init_memory()
-    return memory_by_function[function_type]
-
-def clear_memory_for_function(function_type):
-    """清除指定功能的记忆"""
-    global memory_by_function
-    if function_type in memory_by_function:
-        if memory_by_function[function_type] is not None:
-            memory_by_function[function_type].clear()
-            logger.info(f"功能 {function_type} 的记忆已清除")
+def get_memory_for_function(function_type, user_id="default"):
+    """获取指定用户和功能的记忆对象"""
+    global memory_by_user_and_function
     
-    # 如果是文档问答功能，同时清除文档数据
+    # 确保用户ID存在
+    if user_id not in memory_by_user_and_function:
+        memory_by_user_and_function[user_id] = {}
+    
+    # 确保功能类型存在
+    if function_type not in memory_by_user_and_function[user_id]:
+        memory_by_user_and_function[user_id][function_type] = init_memory()
+        logger.info(f"为用户 {user_id} 的功能 {function_type} 创建新的记忆")
+    
+    return memory_by_user_and_function[user_id][function_type]
+
+def clear_memory_for_function(function_type, user_id="default"):
+    """清除指定用户和功能的记忆"""
+    global memory_by_user_and_function
+    
+    if user_id in memory_by_user_and_function:
+        if function_type in memory_by_user_and_function[user_id]:
+            if memory_by_user_and_function[user_id][function_type] is not None:
+                memory_by_user_and_function[user_id][function_type].clear()
+                logger.info(f"用户 {user_id} 的功能 {function_type} 记忆已清除")
+    
+    # 如果是文档问答功能，同时清除文档数据（注意：这会影响所有用户）
     if function_type == "doc_qa":
         try:
             clear_all_document_data()
-            logger.info(f"功能 {function_type} 的文档数据清除操作已完成")
+            logger.info(f"用户 {user_id} 的功能 {function_type} 的文档数据清除操作已完成")
         except Exception as e:
-            logger.warning(f"清除功能 {function_type} 的文档数据时出现问题: {e}")
+            logger.warning(f"清除用户 {user_id} 功能 {function_type} 的文档数据时出现问题: {e}")
+
+def clear_all_user_memories(user_id):
+    """清除指定用户的所有记忆"""
+    global memory_by_user_and_function
+    
+    if user_id in memory_by_user_and_function:
+        for function_type in memory_by_user_and_function[user_id]:
+            if memory_by_user_and_function[user_id][function_type] is not None:
+                memory_by_user_and_function[user_id][function_type].clear()
+        
+        # 删除整个用户记忆
+        del memory_by_user_and_function[user_id]
+        logger.info(f"用户 {user_id} 的所有记忆已清除")
+    
+def get_active_users_count():
+    """获取当前活跃用户数量"""
+    return len(memory_by_user_and_function)
     
 class EmptyDocQAChain:
     """空文档问答链（当没有文档时使用）"""
@@ -143,11 +165,11 @@ def init_doc_qa_system(llm):
         doc_qa_chain = EmptyDocQAChain()
         return doc_qa_chain
 
-def init_system(function_type="general"):
+def init_system(function_type="general", user_id="default"):
     """初始化对话系统 (LCEL版本)"""
     try:
         llm = init_llm()
-        memory = get_memory_for_function(function_type)  # 使用功能特定的记忆
+        memory = get_memory_for_function(function_type, user_id)  # 使用用户特定的记忆
         
         # 动态角色描述
         role_descriptions = {
@@ -186,12 +208,13 @@ def init_system(function_type="general"):
             | StrOutputParser()
         )
         
-        logger.info(f"对话系统(LCEL)为功能 {function_type} 初始化成功")
+        logger.info(f"对话系统(LCEL)为用户 {user_id} 的功能 {function_type} 初始化成功")
         return {
             "chain": chain,
             "memory": memory,
             "llm": llm,  # 单独存储LLM对象
-            "function_type": function_type
+            "function_type": function_type,
+            "user_id": user_id
         }
     except Exception as e:
         logger.error(f"对话系统初始化失败: {str(e)}")
@@ -200,16 +223,23 @@ def init_system(function_type="general"):
             "chain": RunnableLambda(lambda x: "系统初始化失败，请检查配置"),
             "memory": ConversationBufferMemory(),
             "llm": None,
-            "function_type": function_type
+            "function_type": function_type,
+            "user_id": user_id
         }
 
-def clear_memory(system, function_type=None):
+def clear_memory(system, function_type=None, user_id=None):
     """清除对话记忆"""
     global doc_qa_chain
     try:
-        if function_type:
-            # 清除指定功能的记忆
-            clear_memory_for_function(function_type)
+        if function_type and user_id:
+            # 清除指定用户和功能的记忆
+            clear_memory_for_function(function_type, user_id)
+        elif user_id:
+            # 清除指定用户的所有记忆
+            clear_all_user_memories(user_id)
+        elif function_type:
+            # 清除指定功能的记忆（向后兼容，使用默认用户）
+            clear_memory_for_function(function_type, "default")
         else:
             # 清除当前系统的记忆（向后兼容）
             system["memory"].clear()
@@ -229,11 +259,11 @@ def clear_memory(system, function_type=None):
     except Exception as e:
         logger.error(f"清除记忆失败: {str(e)}")
 
-def get_response(message: str, system: dict, function: str) -> str:
+def get_response(message: str, system: dict, function: str, user_id: str = "default") -> str:
     """获取LLM响应 (LCEL版本)"""
     try:
-        # 获取功能特定的记忆
-        function_memory = get_memory_for_function(function)
+        # 获取用户和功能特定的记忆
+        function_memory = get_memory_for_function(function, user_id)
         
         # 文档问答功能
         if function == "doc_qa":
@@ -248,7 +278,7 @@ def get_response(message: str, system: dict, function: str) -> str:
                     "chat_history": chat_history
                 })
                 
-                # 将文档问答的结果保存到功能特定的记忆
+                # 将文档问答的结果保存到用户特定的记忆
                 function_memory.save_context(
                     {"input": message},
                     {"output": result}
@@ -298,7 +328,7 @@ def get_response(message: str, system: dict, function: str) -> str:
         
         response = chain.invoke({"input": message})
         
-        # 更新功能特定的记忆
+        # 更新用户特定的记忆
         function_memory.save_context(
             {"input": message},
             {"output": response}
@@ -309,11 +339,11 @@ def get_response(message: str, system: dict, function: str) -> str:
         logger.error(f"获取响应失败: {str(e)}")
         return "系统处理请求时出错，请稍后再试"
 
-async def get_response_stream(message: str, system: dict, function: str):
+async def get_response_stream(message: str, system: dict, function: str, user_id: str = "default"):
     """获取LLM流式响应"""
     try:
-        # 获取功能特定的记忆
-        function_memory = get_memory_for_function(function)
+        # 获取用户和功能特定的记忆
+        function_memory = get_memory_for_function(function, user_id)
         
         # 文档问答功能
         if function == "doc_qa":
@@ -331,7 +361,7 @@ async def get_response_stream(message: str, system: dict, function: str):
                         full_response += chunk
                         yield chunk
                 
-                # 保存完整响应到功能特定的记忆
+                # 保存完整响应到用户特定的记忆
                 function_memory.save_context(
                     {"input": message},
                     {"output": full_response}
@@ -389,7 +419,7 @@ async def get_response_stream(message: str, system: dict, function: str):
                     full_response += chunk
                     yield chunk
             
-            # 保存完整响应到功能特定的记忆
+            # 保存完整响应到用户特定的记忆
             function_memory.save_context(
                 {"input": message},
                 {"output": full_response}

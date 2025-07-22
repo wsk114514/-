@@ -1,6 +1,7 @@
 import React, { useState, useRef, useCallback, useMemo } from 'react';
 import { useFunctionContext } from '../context/FunctionContext';
 import { getResponseStream } from '../services/api';
+import { getCurrentUserId } from '../utils/userSession';
 
 const InputBar = () => {
   const [input, setInput] = useState('');
@@ -119,7 +120,7 @@ const InputBar = () => {
             ? { ...msg, content: aiResponse } 
             : msg
         ));
-      }, abortControllerRef.current);
+      }, abortControllerRef.current, getCurrentUserId());
       
     } catch (error) {
       console.error('发送消息失败:', error);
