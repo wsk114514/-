@@ -84,19 +84,62 @@ export const FunctionProvider = ({ children }) => {
   // ========================= URL同步机制 =========================
   
   /**
-   * 监听URL变化，自动同步功能类型
+   * 监听路由变化，自动同步功能类型
    * 支持通过URL直接访问特定功能页面
    * 保证URL和应用状态的一致性
    */
   useEffect(() => {
-    const pathSegments = window.location.pathname.split('/');
-    const functionTypeFromURL = pathSegments[pathSegments.length - 1];
+    // 定义路由变化处理函数
+    const handleRouteChange = () => {
+      const pathSegments = window.location.pathname.split('/');
+      const functionTypeFromURL = pathSegments[pathSegments.length - 1];
+      
+      console.log('路由变化检测:', window.location.pathname, '提取的功能类型:', functionTypeFromURL);
+      
+      // 只有有效的功能类型才进行切换，防止无效状态
+      if (VALID_FUNCTION_TYPES.includes(functionTypeFromURL)) {
+        console.log('切换功能类型到:', functionTypeFromURL);
+        setCurrentFunctionType(functionTypeFromURL);
+      }
+    };
+
+    // 初始化时检查一次
+    handleRouteChange();
+
+    // 监听浏览器历史记录变化（返回/前进按钮）
+    window.addEventListener('popstate', handleRouteChange);
     
-    // 只有有效的功能类型才进行切换，防止无效状态
-    if (VALID_FUNCTION_TYPES.includes(functionTypeFromURL)) {
-      setCurrentFunctionType(functionTypeFromURL);
-    }
-  }, []);
+    // 监听React Router的路由变化
+    const handlePathChange = () => {
+      // 使用setTimeout确保路径已经更新
+      setTimeout(handleRouteChange, 0);
+    };
+
+    // 创建一个MutationObserver来监听URL变化
+    const observer = new MutationObserver(handlePathChange);
+    
+    // 也可以通过监听导航事件
+    const originalPushState = window.history.pushState;
+    const originalReplaceState = window.history.replaceState;
+    
+    window.history.pushState = function(...args) {
+      originalPushState.apply(window.history, args);
+      handlePathChange();
+    };
+    
+    window.history.replaceState = function(...args) {
+      originalReplaceState.apply(window.history, args);
+      handlePathChange();
+    };
+
+    // 清理函数
+    return () => {
+      window.removeEventListener('popstate', handleRouteChange);
+      observer.disconnect();
+      window.history.pushState = originalPushState;
+      window.history.replaceState = originalReplaceState;
+    };
+  }, []); // 空依赖数组，只在组件挂载时运行一次
 
   // ========================= 派生状态 =========================
   

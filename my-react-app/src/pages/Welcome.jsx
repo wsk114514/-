@@ -8,6 +8,7 @@ import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
+import SmartQuestions from '../components/SmartQuestions';
 
 const Welcome = () => {
     const navigate = useNavigate();
@@ -115,6 +116,9 @@ const Welcome = () => {
                         </div>
                     ))}
                 </div>
+
+                {/* 智能问题推荐 */}
+                <SmartQuestions maxQuestions={6} />
 
                 {/* 底部信息 */}
                 <div className="welcome-footer">

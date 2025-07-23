@@ -1,0 +1,495 @@
+/**
+ * SmartQuestions.css - 智能问题推荐组件样式
+ * 
+ * 提供现代化、响应式的智能问题推荐界面样式：
+ * 1. 🎨 现代设计 - 卡片式布局和渐变效果
+ * 2. 🌓 主题适配 - 深色/浅色主题完美适配
+ * 3. 📱 响应式 - 移动端和桌面端优化
+ * 4. ✨ 动画效果 - 平滑过渡和交互反馈
+ */
+
+/* ========================= 主容器样式 ========================= */
+
+.smart-questions {
+  background: var(--card-bg);
+  border-radius: 16px;
+  padding: 1.5rem;
+  margin: 1rem 0;
+  box-shadow: var(--shadow-medium);
+  border: 1px solid var(--border-color);
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.smart-questions::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, #667eea, #764ba2, #f093fb, #4facfe, #43e97b);
+  background-size: 200% 100%;
+  animation: gradientShift 8s ease-in-out infinite;
+}
+
+.smart-questions:hover {
+  box-shadow: var(--shadow-large);
+  transform: translateY(-2px);
+}
+
+/* 紧凑模式 */
+.smart-questions.compact {
+  padding: 1rem;
+  margin: 0.5rem 0;
+}
+
+.smart-questions.compact.collapsed {
+  padding: 0.8rem 1rem;
+}
+
+/* ========================= 头部样式 ========================= */
+
+.smart-questions-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 1rem;
+  gap: 1rem;
+}
+
+.header-content h3 {
+  color: var(--text-primary);
+  font-size: 1.3rem;
+  font-weight: 600;
+  margin: 0 0 0.3rem 0;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.header-subtitle {
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+  margin: 0;
+  opacity: 0.8;
+}
+
+.header-actions {
+  display: flex;
+  gap: 0.5rem;
+  flex-shrink: 0;
+}
+
+.refresh-btn,
+.expand-btn {
+  background: var(--button-secondary-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 0.5rem;
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  font-size: 1rem;
+}
+
+.refresh-btn:hover,
+.expand-btn:hover {
+  background: var(--button-secondary-hover);
+  transform: scale(1.05);
+}
+
+.refresh-btn:active {
+  transform: scale(0.95) rotate(180deg);
+}
+
+/* ========================= 统计信息样式 ========================= */
+
+.smart-questions-stats {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1rem;
+  padding: 0.8rem;
+  background: var(--bg-secondary);
+  border-radius: 8px;
+  border: 1px solid var(--border-color);
+  flex-wrap: wrap;
+}
+
+.stats-item {
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.3rem 0.6rem;
+  background: var(--card-bg);
+  border-radius: 6px;
+  border: 1px solid var(--border-color);
+}
+
+/* ========================= 问题容器样式 ========================= */
+
+.questions-container {
+  animation: slideInUp 0.5s ease-out;
+}
+
+.questions-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.empty-questions {
+  text-align: center;
+  padding: 2rem;
+  color: var(--text-secondary);
+  background: var(--bg-secondary);
+  border-radius: 12px;
+  border: 2px dashed var(--border-color);
+}
+
+.empty-questions p {
+  margin: 0;
+  font-size: 1rem;
+}
+
+/* ========================= 问题卡片样式 ========================= */
+
+.question-card {
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  padding: 1rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  text-align: left;
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+  min-height: 120px;
+}
+
+.question-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: var(--category-color, #667eea);
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 0.3s ease;
+}
+
+.question-card:hover::before {
+  transform: scaleX(1);
+}
+
+.question-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 
+    0 8px 25px rgba(0, 0, 0, 0.15),
+    0 0 0 1px var(--category-color, #667eea);
+  border-color: var(--category-color, #667eea);
+}
+
+.question-card:active {
+  transform: translateY(-1px);
+}
+
+/* 问题卡片头部 */
+.question-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.question-icon {
+  font-size: 1.2rem;
+  flex-shrink: 0;
+}
+
+.question-category {
+  background: var(--category-color, #667eea);
+  color: white;
+  padding: 0.2rem 0.5rem;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  flex-shrink: 0;
+}
+
+.question-priority {
+  color: #ffd700;
+  font-size: 0.8rem;
+  flex-shrink: 0;
+}
+
+/* 问题文本 */
+.question-text {
+  color: var(--text-primary);
+  font-size: 0.95rem;
+  line-height: 1.4;
+  flex-grow: 1;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  line-clamp: 3;
+  overflow: hidden;
+}
+
+/* 问题卡片底部 */
+.question-footer {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: auto;
+}
+
+.click-hint {
+  color: var(--category-color, #667eea);
+  font-size: 0.8rem;
+  font-weight: 500;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.question-card:hover .click-hint {
+  opacity: 1;
+}
+
+/* ========================= 底部样式 ========================= */
+
+.smart-questions-footer {
+  text-align: center;
+  padding-top: 1rem;
+  border-top: 1px solid var(--border-color);
+  margin-top: 1rem;
+}
+
+.smart-questions-footer p {
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+  margin: 0;
+  opacity: 0.8;
+}
+
+/* ========================= 加载和错误状态 ========================= */
+
+.loading-spinner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  gap: 1rem;
+}
+
+.spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid var(--border-color);
+  border-top: 3px solid var(--primary-color);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+.loading-spinner p {
+  color: var(--text-secondary);
+  margin: 0;
+  font-size: 0.9rem;
+}
+
+.error-message {
+  text-align: center;
+  padding: 2rem;
+  color: var(--error-color);
+}
+
+.retry-btn {
+  background: var(--error-color);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 0.6rem 1.2rem;
+  margin-top: 1rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.retry-btn:hover {
+  opacity: 0.9;
+  transform: scale(1.05);
+}
+
+/* ========================= 响应式设计 ========================= */
+
+@media (max-width: 768px) {
+  .smart-questions {
+    padding: 1rem;
+    margin: 0.5rem 0;
+  }
+  
+  .smart-questions-header {
+    flex-direction: column;
+    gap: 0.8rem;
+    align-items: stretch;
+  }
+  
+  .header-actions {
+    justify-content: flex-end;
+  }
+  
+  .questions-grid {
+    grid-template-columns: 1fr;
+    gap: 0.8rem;
+  }
+  
+  .question-card {
+    padding: 0.8rem;
+    min-height: 100px;
+  }
+  
+  .smart-questions-stats {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+  
+  .stats-item {
+    justify-content: center;
+  }
+}
+
+@media (max-width: 480px) {
+  .smart-questions {
+    padding: 0.8rem;
+    border-radius: 12px;
+  }
+  
+  .header-content h3 {
+    font-size: 1.1rem;
+  }
+  
+  .question-card {
+    padding: 0.7rem;
+    gap: 0.6rem;
+  }
+  
+  .question-text {
+    font-size: 0.9rem;
+  }
+  
+  .refresh-btn,
+  .expand-btn {
+    width: 32px;
+    height: 32px;
+    font-size: 0.9rem;
+  }
+}
+
+/* ========================= 动画效果 ========================= */
+
+@keyframes gradientShift {
+  0%, 100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+}
+
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes slideInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ========================= 深色主题适配 ========================= */
+
+[data-theme="dark"] .smart-questions {
+  background: var(--card-bg-dark);
+  border-color: var(--border-color-dark);
+}
+
+[data-theme="dark"] .question-card {
+  background: var(--card-bg-dark);
+  border-color: var(--border-color-dark);
+}
+
+[data-theme="dark"] .question-card:hover {
+  box-shadow: 
+    0 8px 25px rgba(0, 0, 0, 0.3),
+    0 0 0 1px var(--category-color, #667eea);
+}
+
+[data-theme="dark"] .smart-questions-stats {
+  background: var(--bg-secondary-dark);
+  border-color: var(--border-color-dark);
+}
+
+[data-theme="dark"] .stats-item {
+  background: var(--card-bg-dark);
+  border-color: var(--border-color-dark);
+}
+
+/* ========================= 可访问性改进 ========================= */
+
+.question-card:focus {
+  outline: 2px solid var(--primary-color);
+  outline-offset: 2px;
+}
+
+.refresh-btn:focus,
+.expand-btn:focus {
+  outline: 2px solid var(--primary-color);
+  outline-offset: 2px;
+}
+
+/* 减少动画效果（用户偏好） */
+@media (prefers-reduced-motion: reduce) {
+  .smart-questions,
+  .question-card,
+  .refresh-btn,
+  .expand-btn {
+    transition: none;
+  }
+  
+  .questions-container {
+    animation: none;
+  }
+  
+  .spinner {
+    animation: none;
+  }
+  
+  .question-card::before {
+    transition: none;
+  }
+}

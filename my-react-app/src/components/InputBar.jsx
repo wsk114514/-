@@ -4,17 +4,34 @@
  * 负责用户消息输入、文件上传、发送控制等核心交互功能
  */
 
-import React, { useState, useRef, useCallback, useMemo } from 'react';
+import React, { useState, useRef, useCallback, useMemo, useEffect } from 'react';
 import { useFunctionContext } from '../context/FunctionContext';
 import { getResponseStream } from '../services/api';
 import { getCurrentUserId } from '../utils/userSession';
+import { useSearchParams } from 'react-router-dom';
+
+// ========================= 工具函数 =========================
+
+/**
+ * 生成唯一消息ID
+ */
+let messageIdCounter = 0;
+const generateUniqueId = (prefix = 'msg') => {
+  const timestamp = Date.now();
+  const counter = ++messageIdCounter;
+  return `${prefix}-${timestamp}-${counter}`;
+};
 
 const InputBar = () => {
   const [input, setInput] = useState('');
   const [uploading, setUploading] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [presetQuestionProcessed, setPresetQuestionProcessed] = useState(false);
   const fileInputRef = useRef(null);
   const abortControllerRef = useRef(null);
+  
+  // URL参数获取：用于接收预设问题
+  const [searchParams, setSearchParams] = useSearchParams();
   
   const { 
     currentFunctionType, 
@@ -24,6 +41,109 @@ const InputBar = () => {
     isLoading: contextLoading,
     abortResponse
   } = useFunctionContext();
+
+  // ========================= 预设问题处理 =========================
+
+  /**
+   * 处理URL参数中的预设问题
+   */
+  useEffect(() => {
+    const presetQuestion = searchParams.get('question');
+    if (presetQuestion && !presetQuestionProcessed) {
+      const decodedQuestion = decodeURIComponent(presetQuestion);
+      
+      console.log('处理预设问题:', decodedQuestion); // 调试日志
+      
+      // 标记已处理，防止重复处理
+      setPresetQuestionProcessed(true);
+      
+      // 清除URL参数，避免重复设置
+      const newSearchParams = new URLSearchParams(searchParams);
+      newSearchParams.delete('question');
+      setSearchParams(newSearchParams, { replace: true });
+      
+      // 只设置输入框内容，不自动发送
+      setInput(decodedQuestion);
+      
+      // 给用户一个提示，让他们手动发送
+      console.log('预设问题已填入输入框，请手动发送');
+    }
+  }, [searchParams, setSearchParams, presetQuestionProcessed]);
+
+  /**
+   * 发送预设问题消息
+   */
+  const sendPresetMessage = useCallback(async (message) => {
+    if (!message || isLoading || contextLoading) return;
+
+    console.log('发送预设消息:', message); // 调试日志
+
+    const userMsgId = generateUniqueId('user');
+    const aiMsgId = generateUniqueId('ai');
+    
+    // 添加用户消息
+    addMessage({
+      content: message,
+      isUser: true,
+      id: userMsgId
+    });
+    
+    setInput(''); // 清空输入框
+    setIsLoading(true);
+    
+    // 添加AI思考中消息
+    addMessage({
+      content: '正在思考...',
+      isUser: false,
+      id: aiMsgId
+    });
+
+    try {
+      let aiResponse = '';
+      
+      // 准备聊天历史
+      const chat_history = messages.map(msg => ({
+        role: msg.isUser ? 'user' : 'assistant',
+        content: msg.content
+      }));
+      
+      console.log('预设消息发送时的聊天历史:', chat_history);
+      
+      // 创建新的 AbortController
+      abortControllerRef.current = new AbortController();
+      
+      await getResponseStream(message, currentFunctionType, (chunk) => {
+        aiResponse += chunk;
+        
+        // 实时更新AI消息
+        setMessages(prev => prev.map(msg => 
+          msg.id === aiMsgId 
+            ? { ...msg, content: aiResponse } 
+            : msg
+        ));
+      }, abortControllerRef.current, getCurrentUserId(), chat_history);
+      
+    } catch (error) {
+      console.error('发送预设消息失败:', error);
+      
+      if (abortControllerRef.current && abortControllerRef.current.signal.aborted) {
+        setMessages(prev => prev.map(msg => 
+          msg.id === aiMsgId 
+            ? { ...msg, content: '已停止生成。' } 
+            : msg
+        ));
+      } else {
+        setMessages(prev => prev.map(msg => 
+          msg.id === aiMsgId 
+            ? { ...msg, content: '抱歉，发生错误，请稍后再试。' } 
+            : msg
+        ));
+      }
+    } finally {
+      setIsLoading(false);
+      abortControllerRef.current = null;
+    }
+  }, [isLoading, contextLoading, addMessage, currentFunctionType, setMessages, messages]);
   
   // 是否显示上传按钮
   const showUploadButton = useMemo(() => 
@@ -61,7 +181,7 @@ const InputBar = () => {
       addMessage({
         content: `文件 "${file.name}" 上传成功！`,
         isUser: false,
-        id: `upload-${Date.now()}`
+        id: generateUniqueId('upload')
       });
       
     } catch (error) {
@@ -70,7 +190,7 @@ const InputBar = () => {
       addMessage({
         content: `文件上传失败：${error.message}`,
         isUser: false,
-        id: `upload-error-${Date.now()}`
+        id: generateUniqueId('upload-error')
       });
     } finally {
       setUploading(false);
@@ -92,8 +212,10 @@ const InputBar = () => {
     const message = input.trim();
     if (!message || isLoading || contextLoading) return;
 
-    const userMsgId = `user-${Date.now()}`;
-    const aiMsgId = `ai-${Date.now()}`;
+    console.log('发送普通消息:', message); // 调试日志
+
+    const userMsgId = generateUniqueId('user');
+    const aiMsgId = generateUniqueId('ai');
     
     // 添加用户消息
     addMessage({
@@ -121,7 +243,7 @@ const InputBar = () => {
         content: msg.content
       }));
       
-      console.log(`发送消息时的messages长度: ${messages.length}`);
+      console.log(`普通消息发送时的messages长度: ${messages.length}`);
       console.log(`发送的chat_history:`, chat_history);
       console.log(`即将发送的完整请求数据:`, {
         message: message,

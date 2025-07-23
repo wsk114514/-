@@ -16,6 +16,7 @@ main.css - 主样式入口文件
 @import './components/states.css';
 @import './components/chat-history.css';
 @import './components/theme-toggle.css';
+@import './components/smart-questions.css';
 
 /* ========== 页面样式导入 ========== */
 @import './pages/Welcome.css';

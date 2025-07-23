@@ -3,7 +3,7 @@ import Sidebar from '../components/Sidebar';
 import ChatBubble from '../components/ChatBubble';
 import InputBar from '../components/InputBar';
 import { useFunctionContext } from '../context/FunctionContext';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import { getCurrentUserId, getSessionInfo } from '../utils/userSession';
@@ -36,6 +36,9 @@ const Chat = () => {
   
   // 路由信息：用于URL同步和功能切换
   const location = useLocation();
+  
+  // URL参数获取：用于接收预设问题
+  const [searchParams] = useSearchParams();
   
   // 用户认证状态：当前登录用户信息
   const { user } = useAuth();
