@@ -1,4 +1,5 @@
 import React, { useState, useCallback, useMemo } from 'react';
+import ReactMarkdown from 'react-markdown';
 import { useFunctionContext } from '../context/FunctionContext';
 
 const ChatBubble = ({ content, isUser, messageId, temp }) => {
@@ -78,18 +79,57 @@ const ChatBubble = ({ content, isUser, messageId, temp }) => {
       );
     }
     
-    // 移除###标记
-    const contentWithoutHashes = content.replace(/###/g, '');
-    // 移除**标记
-    const contentWithoutBold = contentWithoutHashes.replace(/\*\*/g, '');
-    
-    // 处理换行
-    return contentWithoutBold.split('\n').map((line, index) => (
-      <span key={index}>
-        {line}
-        {index < contentWithoutBold.split('\n').length - 1 && <br />}
-      </span>
-    ));
+    // 使用ReactMarkdown渲染Markdown内容
+    return (
+      <ReactMarkdown
+        components={{
+          // 自定义组件样式
+          h1: ({children}) => <h1 style={{fontSize: '1.4em', margin: '0.5em 0', color: 'inherit'}}>{children}</h1>,
+          h2: ({children}) => <h2 style={{fontSize: '1.3em', margin: '0.5em 0', color: 'inherit'}}>{children}</h2>,
+          h3: ({children}) => <h3 style={{fontSize: '1.2em', margin: '0.5em 0', color: 'inherit'}}>{children}</h3>,
+          p: ({children}) => <p style={{margin: '0.5em 0', lineHeight: '1.6'}}>{children}</p>,
+          strong: ({children}) => <strong style={{fontWeight: 'bold', color: 'inherit'}}>{children}</strong>,
+          em: ({children}) => <em style={{fontStyle: 'italic', color: 'inherit'}}>{children}</em>,
+          ul: ({children}) => <ul style={{margin: '0.5em 0', paddingLeft: '1.5em'}}>{children}</ul>,
+          ol: ({children}) => <ol style={{margin: '0.5em 0', paddingLeft: '1.5em'}}>{children}</ol>,
+          li: ({children}) => <li style={{margin: '0.2em 0'}}>{children}</li>,
+          code: ({children}) => (
+            <code style={{
+              backgroundColor: 'rgba(255, 255, 255, 0.1)',
+              padding: '0.1em 0.3em',
+              borderRadius: '3px',
+              fontFamily: 'monospace',
+              fontSize: '0.9em'
+            }}>
+              {children}
+            </code>
+          ),
+          pre: ({children}) => (
+            <pre style={{
+              backgroundColor: 'rgba(255, 255, 255, 0.05)',
+              padding: '1em',
+              borderRadius: '5px',
+              overflow: 'auto',
+              margin: '0.5em 0'
+            }}>
+              {children}
+            </pre>
+          ),
+          blockquote: ({children}) => (
+            <blockquote style={{
+              borderLeft: '3px solid #666',
+              paddingLeft: '1em',
+              margin: '0.5em 0',
+              opacity: '0.8'
+            }}>
+              {children}
+            </blockquote>
+          )
+        }}
+      >
+        {content}
+      </ReactMarkdown>
+    );
   }, [content, isThinking]);
 
   return (
