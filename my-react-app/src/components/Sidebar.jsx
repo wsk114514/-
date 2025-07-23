@@ -243,6 +243,13 @@ const Sidebar = () => {
                         💬 开启新对话
                     </button>
                     <button 
+                        className="collection-btn" 
+                        onClick={() => navigate('/collection')}
+                        title="查看游戏收藏列表"
+                    >
+                        📚 游戏收藏
+                    </button>
+                    <button 
                         className="logout-btn" 
                         onClick={handleLogout}
                     >

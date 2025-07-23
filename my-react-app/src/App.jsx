@@ -31,6 +31,7 @@ import Register from './pages/Register';
 import Welcome from './pages/Welcome';
 import PublicWelcome from './pages/PublicWelcome';
 import Chat from './pages/Chat';
+import GameCollection from './components/GameCollection';
 import ProtectedRoute from './components/ProtectedRoute';
 import './assets/styles/main.css';
 
@@ -90,6 +91,16 @@ function App() {
                   element={
                     <ProtectedRoute>
                       <Chat />
+                    </ProtectedRoute>
+                  } 
+                />
+                
+                {/* 游戏收藏页 - 管理用户收藏的游戏 */}
+                <Route 
+                  path="/collection" 
+                  element={
+                    <ProtectedRoute>
+                      <GameCollection />
                     </ProtectedRoute>
                   } 
                 />

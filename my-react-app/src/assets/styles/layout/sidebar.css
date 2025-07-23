@@ -74,7 +74,7 @@ sidebar.css - 侧边栏布局样式
 
 .menu-item:hover {
     background: var(--accent-primary);
-    color: var(--text-primary);
+    color: white;
     transform: translateX(2px);
     box-shadow: 0 2px 8px rgba(79, 94, 246, 0.3);
     text-decoration: none;
@@ -83,7 +83,7 @@ sidebar.css - 侧边栏布局样式
 /* 通用助手按钮特殊样式 */
 .menu-item.general-assistant {
     background: linear-gradient(135deg, #4f5ef6, #6366f1);
-    color: var(--text-primary);
+    color: white;
     
     border: 1px solid rgba(79, 94, 246, 0.3);
 }
@@ -147,7 +147,7 @@ sidebar.css - 侧边栏布局样式
     height: 40px;
     padding: 0 var(--spacing-sm);
     background-color: var(--accent-primary);
-    color: var(--text-primary);
+    color: white;
     border: none;
     border-radius: 8px;
     cursor: pointer;
@@ -174,7 +174,7 @@ sidebar.css - 侧边栏布局样式
     height: 40px;
     padding: 0 var(--spacing-sm);
     background-color: var(--accent-danger);
-    color: var(--text-primary);
+    color: white;
     border: none;
     border-radius: 8px;
     cursor: pointer;
@@ -193,6 +193,34 @@ sidebar.css - 侧边栏布局样式
     background-color: var(--accent-danger-hover);
     transform: translateY(-1px);
     box-shadow: 0 4px 8px rgba(255, 77, 79, 0.4);
+}
+
+/* 游戏收藏按钮样式 */
+.collection-btn {
+    width: 100%;
+    height: 40px;
+    padding: 0 var(--spacing-sm);
+    background-color: var(--accent-success);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: var(--font-size-md);
+    font-weight: 600;
+    transition: all var(--transition-normal);
+    box-shadow: 0 3px 8px rgba(34, 197, 94, 0.3);
+    letter-spacing: 0.5px;
+    margin-top: var(--spacing-xs);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--spacing-xs);
+}
+
+.collection-btn:hover {
+    background-color: var(--accent-success-hover);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(34, 197, 94, 0.4);
 }
 
 /* ========== 会话信息样式 ========== */
@@ -257,7 +285,7 @@ sidebar.css - 侧边栏布局样式
     height: 32px;
     padding: 0 var(--spacing-sm);
     background-color: var(--accent-primary);
-    color: var(--text-primary);
+    color: white;
     border: none;
     border-radius: 6px;
     cursor: pointer;

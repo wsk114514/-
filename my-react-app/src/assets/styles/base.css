@@ -22,6 +22,8 @@ base.css - 基础样式和全局变量
     --accent-danger-hover: #ff7875;
     --accent-warning: #ffc107;
     --accent-warning-hover: #ffca2c;
+    --accent-success: #22c55e;
+    --accent-success-hover: #16a34a;
     
     --gradient-ai: #141414;
     --gradient-user: #141414;
@@ -82,6 +84,8 @@ base.css - 基础样式和全局变量
     --accent-danger-hover: #ff7875;
     --accent-warning: #ffc107;
     --accent-warning-hover: #ffca2c;
+    --accent-success: #22c55e;
+    --accent-success-hover: #16a34a;
     
     --gradient-ai: #f0f0f0;
     --gradient-user: #e6f7ff;
