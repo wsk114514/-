@@ -2,23 +2,62 @@ import React, { useState, useCallback, useMemo } from 'react';
 import ReactMarkdown from 'react-markdown';
 import { useFunctionContext } from '../context/FunctionContext';
 
+/**
+ * 聊天气泡组件
+ * 
+ * 功能说明：
+ * - 显示用户和AI的聊天消息
+ * - 支持Markdown格式渲染
+ * - 提供消息复制、重新生成等交互功能
+ * - 支持思考状态和加载状态的显示
+ * 
+ * @param {Object} props - 组件属性
+ * @param {string} props.content - 消息内容
+ * @param {boolean} props.isUser - 是否为用户消息
+ * @param {string} props.messageId - 消息唯一标识符
+ * @param {boolean} props.temp - 是否为临时消息（如加载中的消息）
+ * 
+ * @returns {JSX.Element} 聊天气泡组件
+ */
 const ChatBubble = ({ content, isUser, messageId, temp }) => {
+  // ========================= 状态管理 =========================
+  
+  // 复制状态 - 用于显示复制成功的反馈
   const [copied, setCopied] = useState(false);
+  
+  // 从功能上下文获取操作方法
   const { regenerateMessage, isLoading, abortResponse } = useFunctionContext();
   
-  // 检测思考状态
+  // ========================= 计算属性 =========================
+  
+  /**
+   * 检测思考状态
+   * 判断当前消息是否处于AI思考状态
+   */
   const isThinking = useMemo(() => 
     content === '正在思考...' || content === '正在重新思考...' || temp,
     [content, temp]
   );
 
-  // 检测当前消息是否正在重新生成（基于内容判断）
+  /**
+   * 检测当前消息是否正在重新生成
+   * 基于消息内容和临时状态判断
+   */
   const isCurrentlyRegenerating = useMemo(() => 
     content === '正在重新思考...' || (temp && !isUser),
     [content, temp, isUser]
   );
 
-  // 处理复制功能 - 兼容多种环境
+  // ========================= 事件处理函数 =========================
+
+  /**
+   * 处理复制功能 - 兼容多种浏览器环境
+   * 
+   * 功能说明：
+   * - 优先使用现代Clipboard API
+   * - 提供传统document.execCommand的后备方案
+   * - 包含错误处理和用户反馈
+   */
   const handleCopy = useCallback(async () => {
     try {
       // 优先使用现代 Clipboard API
@@ -54,20 +93,39 @@ const ChatBubble = ({ content, isUser, messageId, temp }) => {
     }
   }, [content]);
 
-  // 处理重新生成
+  /**
+   * 处理重新生成消息
+   * 
+   * 功能说明：
+   * - 检查消息ID和当前状态
+   * - 防止重复触发重新生成
+   * - 调用上下文中的重新生成方法
+   */
   const handleRegenerate = useCallback(async () => {
     if (messageId && !isCurrentlyRegenerating && !isLoading) {
       await regenerateMessage(messageId);
     }
   }, [messageId, isCurrentlyRegenerating, isLoading, regenerateMessage]);
 
-  // 处理终止重新生成
+  /**
+   * 处理终止重新生成
+   * 
+   * 功能说明：
+   * - 调用上下文中的终止响应方法
+   * - 用于用户主动停止AI生成过程
+   */
   const handleAbortRegenerate = useCallback(() => {
     abortResponse();
   }, [abortResponse]);
 
-  // 格式化内容显示
+  // ========================= 内容渲染逻辑 =========================
+
+  /**
+   * 格式化内容显示
+   * 根据消息状态决定渲染方式
+   */
   const formattedContent = useMemo(() => {
+    // 思考状态显示动画指示器
     if (isThinking) {
       return (
         <div className="thinking-indicator">
@@ -83,7 +141,7 @@ const ChatBubble = ({ content, isUser, messageId, temp }) => {
     return (
       <ReactMarkdown
         components={{
-          // 自定义组件样式
+          // 自定义Markdown组件样式
           h1: ({children}) => <h1 style={{fontSize: '1.4em', margin: '0.5em 0', color: 'inherit'}}>{children}</h1>,
           h2: ({children}) => <h2 style={{fontSize: '1.3em', margin: '0.5em 0', color: 'inherit'}}>{children}</h2>,
           h3: ({children}) => <h3 style={{fontSize: '1.2em', margin: '0.5em 0', color: 'inherit'}}>{children}</h3>,

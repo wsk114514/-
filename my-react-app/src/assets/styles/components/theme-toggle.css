@@ -1,3 +1,9 @@
+/**
+ * theme-toggle.css - 主题切换组件样式
+ * 
+ * 负责深色/浅色主题切换按钮的样式和交互效果
+ */
+
 /* 主题切换按钮样式 */
 .theme-toggle {
     display: flex;

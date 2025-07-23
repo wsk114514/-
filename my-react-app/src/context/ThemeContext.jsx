@@ -1,3 +1,9 @@
+/**
+ * ThemeContext.jsx - 主题状态管理
+ * 
+ * 负责深色/浅色主题切换和主题状态的全局管理
+ */
+
 import React, { createContext, useState, useEffect, useContext } from 'react';
 
 // 创建主题上下文

@@ -1,3 +1,9 @@
+/**
+ * ProtectedRoute.jsx - 路由保护组件
+ * 
+ * 负责保护需要认证的路由，未登录用户自动重定向到登录页面
+ */
+
 import React from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';

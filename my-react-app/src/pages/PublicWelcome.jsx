@@ -1,3 +1,9 @@
+/**
+ * PublicWelcome.jsx - 公共欢迎页面
+ * 
+ * 负责应用首页展示、功能介绍和用户引导到登录注册
+ */
+
 import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import '../assets/styles/main.css';

@@ -1,3 +1,9 @@
+/**
+ * Sidebar.jsx - 侧边栏导航组件
+ * 
+ * 负责功能模式切换、用户信息显示、设置管理等导航功能
+ */
+
 import React, { useCallback, useMemo, useState, useEffect } from 'react';
 import { useFunctionContext } from '../context/FunctionContext';
 import { useNavigate } from 'react-router-dom';

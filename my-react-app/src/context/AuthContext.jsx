@@ -1,3 +1,9 @@
+/**
+ * AuthContext.jsx - 用户认证状态管理
+ * 
+ * 负责用户登录状态管理、会话保持和认证相关的全局状态
+ */
+
 import React, { createContext, useState, useContext, useEffect, useCallback } from 'react';
 
 const AuthContext = createContext();

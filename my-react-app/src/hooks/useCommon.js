@@ -1,3 +1,9 @@
+/**
+ * useCommon.js - 通用自定义Hooks
+ * 
+ * 负责提供防抖、节流、本地存储等通用的React Hooks
+ */
+
 import { useCallback, useRef, useEffect, useState } from 'react';
 
 // 防抖 Hook

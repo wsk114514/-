@@ -1,4 +1,10 @@
 
+/**
+ * logincss.css - 登录页面样式
+ * 
+ * 负责登录页面的布局、表单样式和视觉效果
+ */
+
 /* 登录页面整体样式 */
 .login-page {
   position: fixed;

@@ -1,3 +1,9 @@
+/**
+ * Login.jsx - 用户登录页面
+ * 
+ * 负责用户身份验证、登录表单处理和登录后的页面跳转
+ */
+
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';

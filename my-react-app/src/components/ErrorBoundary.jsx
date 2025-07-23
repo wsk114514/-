@@ -1,3 +1,9 @@
+/**
+ * ErrorBoundary.jsx - 错误边界组件
+ * 
+ * 负责捕获和处理React组件树中的JavaScript错误，提供优雅的错误恢复界面
+ */
+
 import React from 'react';
 
 class ErrorBoundary extends React.Component {

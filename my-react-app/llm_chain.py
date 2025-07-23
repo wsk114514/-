@@ -1,3 +1,27 @@
+"""
+llm_chain.py - LangChain集成与AI对话链模块
+
+这是应用的AI对话核心，负责：
+1. 🤖 大语言模型集成 - 通义千问/DeepSeek模型的统一接口
+2. 🧠 多功能对话链 - 不同功能模式的专门化处理
+3. 💾 对话记忆管理 - 按用户和功能分类的记忆存储
+4. 📄 文档问答集成 - RAG检索增强生成功能
+5. 🔄 流式响应支持 - 实时消息流处理
+6. 🎯 Prompt工程 - 针对不同功能的优化提示词
+
+技术栈：
+- LangChain: AI应用开发框架
+- 通义千问: 阿里云大语言模型
+- ChromaDB: 向量数据库集成
+- ConversationBufferMemory: 对话记忆管理
+
+设计特色：
+- 多租户记忆隔离：每个用户和功能独立的对话历史
+- 模块化功能链：不同功能使用专门的处理链
+- 智能上下文管理：自动管理对话上下文长度
+- 错误恢复机制：网络异常的自动重试和降级
+"""
+
 import os
 from langchain_core.runnables import RunnablePassthrough, RunnableLambda
 from langchain_core.prompts import ChatPromptTemplate
@@ -9,19 +33,43 @@ from document_processing import CHROMA_PATH, init_embeddings, clear_vector_store
 import logging
 from operator import itemgetter
 
-# 配置日志
+# ========================= 日志配置 =========================
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+# ========================= 全局变量 =========================
+
+# 文档问答链的全局实例
 doc_qa_chain = None
 
+# ========================= 模型初始化 =========================
+
 def init_llm():
-    """初始化大语言模型"""
+    """
+    初始化大语言模型
+    
+    功能说明：
+    - 从环境变量读取API密钥
+    - 配置模型参数（温度、top_p等）
+    - 建立与通义千问API的连接
+    - 提供统一的模型接口
+    
+    Returns:
+        ChatTongyi: 配置好的大语言模型实例
+        
+    Raises:
+        ValueError: API密钥未设置
+        Exception: 模型初始化失败
+        
+    Note:
+        需要在环境变量中设置DASHSCOPE_API_KEY
+    """
     try:
         API_KEY = os.getenv("DASHSCOPE_API_KEY")
         if not API_KEY:
             raise ValueError("DASHSCOPE_API_KEY 环境变量未设置")
         
+        # 初始化通义千问模型，设置创造性参数
         llm = ChatTongyi(name="qwen-plus", api_key=API_KEY, temperature=0.8, top_p=0.9)
         logger.info("成功初始化大语言模型")
         return llm
@@ -30,25 +78,58 @@ def init_llm():
         raise
 
 def init_memory():
-    """初始化对话记忆"""
+    """
+    初始化对话记忆
+    
+    功能说明：
+    - 创建对话缓冲记忆对象
+    - 配置记忆参数和格式
+    - 支持消息历史的自动管理
+    
+    Returns:
+        ConversationBufferMemory: 对话记忆实例
+    """
     return ConversationBufferMemory(
-        return_messages=True,
-        memory_key="chat_history"
+        return_messages=True,    # 返回消息对象而非字符串
+        memory_key="chat_history"  # 记忆在prompt中的键名
     )
 
+# ========================= 记忆管理系统 =========================
+
 # 全局记忆存储 - 按用户ID和功能类型分别存储
-# 结构: {user_id: {function_type: memory_object}}
+# 数据结构: {user_id: {function_type: memory_object}}
+# 这种设计确保了：
+# 1. 不同用户的对话完全隔离
+# 2. 同一用户的不同功能对话独立
+# 3. 支持多用户并发使用
 memory_by_user_and_function = {}
 
 def get_memory_for_function(function_type, user_id="default"):
-    """获取指定用户和功能的记忆对象"""
+    """
+    获取指定用户和功能的记忆对象
+    
+    功能说明：
+    - 按需创建用户和功能的记忆实例
+    - 确保多用户环境下的数据隔离
+    - 支持懒加载，节省内存资源
+    
+    Args:
+        function_type (str): 功能类型 (general/play/game_guide/doc_qa/game_wiki)
+        user_id (str): 用户标识符，默认为"default"
+        
+    Returns:
+        ConversationBufferMemory: 对应的记忆对象
+        
+    Note:
+        首次调用时会自动创建新的记忆实例
+    """
     global memory_by_user_and_function
     
-    # 确保用户ID存在
+    # 确保用户ID存在于存储中
     if user_id not in memory_by_user_and_function:
         memory_by_user_and_function[user_id] = {}
     
-    # 确保功能类型存在
+    # 确保功能类型存在于用户的存储中
     if function_type not in memory_by_user_and_function[user_id]:
         memory_by_user_and_function[user_id][function_type] = init_memory()
         logger.info(f"为用户 {user_id} 的功能 {function_type} 创建新的记忆")
@@ -56,7 +137,18 @@ def get_memory_for_function(function_type, user_id="default"):
     return memory_by_user_and_function[user_id][function_type]
 
 def clear_memory_for_function(function_type, user_id="default"):
-    """清除指定用户和功能的记忆"""
+    """
+    清除指定用户和功能的记忆
+    
+    功能说明：
+    - 删除特定功能的对话历史
+    - 用户主动清理或重置对话时调用
+    - 保持其他功能的记忆不受影响
+    
+    Args:
+        function_type (str): 要清除记忆的功能类型
+        user_id (str): 用户标识符
+    """
     global memory_by_user_and_function
     
     if user_id in memory_by_user_and_function:

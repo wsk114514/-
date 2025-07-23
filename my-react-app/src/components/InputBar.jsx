@@ -1,3 +1,9 @@
+/**
+ * InputBar.jsx - 消息输入栏组件
+ * 
+ * 负责用户消息输入、文件上传、发送控制等核心交互功能
+ */
+
 import React, { useState, useRef, useCallback, useMemo } from 'react';
 import { useFunctionContext } from '../context/FunctionContext';
 import { getResponseStream } from '../services/api';

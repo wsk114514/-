@@ -1,3 +1,9 @@
+/**
+ * Welcome.jsx - 用户欢迎页面
+ * 
+ * 负责登录后的欢迎界面展示和功能导航入口
+ */
+
 import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';

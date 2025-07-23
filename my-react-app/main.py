@@ -1,4 +1,21 @@
-# main.py - 重构优化版本
+# main.py - 智能游戏对话系统后端主入口
+"""
+智能游戏对话系统 - FastAPI后端服务
+
+这是一个基于FastAPI的智能对话系统后端，集成了以下核心功能：
+1. 🤖 AI对话服务 - 基于DeepSeek大模型的多功能聊天
+2. 📄 文档处理服务 - RAG技术支持的文档问答
+3. 🔐 用户认证系统 - 登录注册和会话管理
+4. 📁 文件上传服务 - 支持PDF/TXT文档上传分析
+5. 🔄 流式响应 - 实时消息流式传输
+
+技术栈:
+- Web框架: FastAPI (现代化的Python Web框架)
+- AI集成: LangChain + DeepSeek (大语言模型集成)
+- 文档处理: PyPDF2 + python-docx (多格式文档解析)
+- 向量数据库: ChromaDB (语义检索和RAG)
+- 认证系统: 自定义JWT实现
+"""
 
 import os
 import logging
@@ -26,54 +43,174 @@ from document_processing import (
 from config import UPLOAD_DIR, ALLOWED_EXTENSIONS
 from pathlib import Path
 
-# 配置日志
-logging.basicConfig(level=logging.INFO)
+# 配置日志系统 - 统一的日志格式和级别
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    handlers=[
+        logging.StreamHandler(),  # 控制台输出
+        # 可以添加文件输出: logging.FileHandler('app.log')
+    ]
+)
 logger = logging.getLogger(__name__)
 
 
 class ApplicationState:
-    """应用状态管理类"""
+    """
+    应用状态管理类
+    
+    负责管理整个应用的全局状态，包括：
+    - LangChain系统初始化和缓存
+    - 不同功能模式的系统实例管理
+    - 应用生命周期中的资源管理
+    
+    设计模式: 单例模式，确保全局唯一的状态管理器
+    """
     
     def __init__(self):
-        self.llm_systems = {}  # 按功能类型存储系统
-        self.valid_functions = ["general", "play", "game_guide", "doc_qa", "game_wiki"]
+        """初始化应用状态管理器"""
+        self.systems = {}  # 存储不同功能类型的LangChain系统实例
+        self.is_initialized = False  # 标记是否已初始化
+        logger.info("应用状态管理器已创建")
     
     def initialize(self):
-        """初始化应用状态"""
+        """
+        初始化应用核心系统
+        
+        在应用启动时调用，负责：
+        1. 初始化各种功能模式的LangChain系统
+        2. 预热AI模型连接
+        3. 设置默认配置
+        """
+        if self.is_initialized:
+            logger.warning("应用已经初始化，跳过重复初始化")
+            return
+            
         try:
-            # 初始化默认的通用系统
-            self.llm_systems["general"] = init_system("general")
-            logger.info("LLM系统初始化成功")
+            logger.info("开始初始化应用核心系统...")
+            
+            # 初始化基础LangChain系统
+            # 这里会预加载不同功能模式的Prompt模板和配置
+            init_system()
+            
+            self.is_initialized = True
+            logger.info("✅ 应用核心系统初始化完成")
+            
         except Exception as e:
-            logger.error(f"LLM系统初始化失败: {str(e)}")
+            logger.error(f"❌ 应用初始化失败: {str(e)}")
             raise
     
     def get_system_for_function(self, function_type: str):
-        """获取指定功能的系统，如果不存在则创建"""
+        """
+        获取指定功能类型的LangChain系统实例
+        
+        Args:
+            function_type (str): 功能类型
+                - "general": 通用助手
+                - "game_guide": 游戏攻略
+                - "game_recommend": 游戏推荐  
+                - "doc_qa": 文档问答
+                - "game_wiki": 游戏百科
+        
+        Returns:
+            LangChain系统实例，用于处理特定类型的对话
+        """
+        if function_type not in self.systems:
+            logger.info(f"创建新的{function_type}功能系统实例")
+            # 这里可以根据不同功能类型返回不同配置的系统
+            # 目前使用统一的系统，未来可以扩展为专门的系统
+            self.systems[function_type] = init_system()
+        
+        return self.systems[function_type]
+    """
+    应用状态管理类
+    
+    负责管理整个应用的全局状态，包括：
+    - LLM系统实例管理
+    - 功能类型验证
+    - 系统初始化和清理
+    """
+    
+    def __init__(self):
+        """初始化应用状态管理器"""
+        # 按功能类型存储不同的LLM系统实例
+        self.llm_systems = {}
+        
+        # 定义支持的功能类型
+        self.valid_functions = [
+            "general",      # 通用助手
+            "play",         # 游戏推荐
+            "game_guide",   # 游戏攻略
+            "doc_qa",       # 文档问答
+            "game_wiki"     # 游戏百科
+        ]
+    
+    def initialize(self):
+        """
+        初始化应用状态
+        
+        在应用启动时调用，负责：
+        - 初始化默认LLM系统
+        - 验证系统依赖
+        - 记录初始化状态
+        """
+        try:
+            # 初始化默认的通用对话系统
+            self.llm_systems["general"] = init_system("general")
+            logger.info("✅ LLM系统初始化成功")
+        except Exception as e:
+            logger.error(f"❌ LLM系统初始化失败: {str(e)}")
+            raise
+    
+    def get_system_for_function(self, function_type: str):
+        """
+        获取指定功能的LLM系统实例
+        
+        参数:
+            function_type (str): 功能类型标识
+            
+        返回:
+            LLM系统实例
+            
+        功能:
+        - 验证功能类型的有效性
+        - 懒加载创建系统实例
+        - 提供故障转移机制
+        """
+        # 验证功能类型，无效时默认使用通用功能
         if function_type not in self.valid_functions:
+            logger.warning(f"⚠️ 无效的功能类型: {function_type}，使用默认通用功能")
             function_type = "general"
         
+        # 懒加载：如果系统不存在则创建
         if function_type not in self.llm_systems:
             try:
                 self.llm_systems[function_type] = init_system(function_type)
-                logger.info(f"为功能 {function_type} 创建了新的LLM系统")
+                logger.info(f"✅ 为功能 '{function_type}' 创建了新的LLM系统")
             except Exception as e:
-                logger.error(f"为功能 {function_type} 创建系统失败: {str(e)}")
-                # 使用通用系统作为后备
+                logger.error(f"❌ 为功能 '{function_type}' 创建系统失败: {str(e)}")
+                # 故障转移：使用通用系统作为后备
                 if "general" in self.llm_systems:
+                    logger.info("🔄 使用通用系统作为后备")
                     return self.llm_systems["general"]
                 raise
         
         return self.llm_systems[function_type]
 
 
-# 全局应用状态
+# 全局应用状态实例
 app_state = ApplicationState()
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    """应用生命周期管理"""
+    """
+    FastAPI应用生命周期管理
+    
+    负责应用的启动和关闭流程：
+    - 启动时: 初始化系统依赖
+    - 关闭时: 清理资源和连接
+    """
     # 启动时初始化
     logger.info("正在启动应用...")
     app_state.initialize()
@@ -103,26 +240,60 @@ app.add_middleware(
 )
 
 
-# 静态文件服务
+# ========================= 静态文件服务 =========================
+# 配置静态文件服务，用于提供上传的文档文件
 app.mount("/static", StaticFiles(directory=Path(__file__).parent / "static"), name="static")
 
 
+# ========================= 依赖注入函数 =========================
+
 def get_app_state() -> ApplicationState:
-    """依赖注入：获取应用状态"""
+    """
+    依赖注入：获取应用状态
+    
+    Returns:
+        ApplicationState: 全局应用状态实例，包含所有LLM系统
+    """
     return app_state
 
 
 def get_llm_system(function_type: str = "general"):
-    """依赖注入：获取指定功能的LLM系统"""
+    """
+    依赖注入：获取指定功能的LLM系统
+    
+    Args:
+        function_type (str): 功能类型 ("general", "translator", "creative", "document")
+        
+    Returns:
+        LLMSystem: 对应功能的LLM系统实例
+    """
     return app_state.get_system_for_function(function_type)
 
 
-# === 对话相关端点 ===
+# ========================= 对话相关端点 =========================
 
 @app.post("/app", response_model=ChatResponse)
 async def chat_endpoint(req: ChatRequest):
-    """处理聊天请求"""
+    """
+    处理聊天请求的主要端点
+    
+    功能说明：
+    - 接收用户的聊天消息和功能类型
+    - 根据功能类型选择对应的LLM系统
+    - 处理消息并返回AI回复
+    - 支持多种对话模式（通用、翻译、创意、文档问答）
+    
+    Args:
+        req (ChatRequest): 聊天请求对象，包含消息内容、功能类型、用户ID
+        
+    Returns:
+        ChatResponse: 聊天响应对象，包含AI回复内容
+        
+    Raises:
+        HTTPException: 当消息为空或处理过程中出现错误时
+    """
     try:
+        # 验证消息内容
         message = req.message.strip()
         if not message:
             return JSONResponse(
@@ -130,9 +301,12 @@ async def chat_endpoint(req: ChatRequest):
                 content={"error": "消息不能为空"}
             )
         
-        # 获取功能特定的系统
+        # 获取功能特定的LLM系统
         system = get_llm_system(req.function)
+        
+        # 调用LLM链处理消息并获取回复
         response = get_response(message, system, req.function, req.user_id)
+        
         return ChatResponse(response=response)
         
     except Exception as e:
@@ -145,8 +319,28 @@ async def chat_endpoint(req: ChatRequest):
 
 @app.post("/app/stream")
 async def chat_stream_endpoint(req: ChatRequest):
-    """流式响应对话端点"""
+    """
+    流式响应对话端点
+    
+    功能说明：
+    - 处理需要流式输出的聊天请求
+    - 实时返回AI生成的内容片段
+    - 支持长文本生成和实时响应
+    - 使用Server-Sent Events (SSE) 协议
+    
+    Args:
+        req (ChatRequest): 聊天请求对象，包含消息内容、功能类型、用户ID
+        
+    Returns:
+        StreamingResponse: 流式响应，逐步返回生成的内容
+        
+    Note:
+        - 响应格式为SSE (Server-Sent Events)
+        - 每个数据块以"data: "开头
+        - 结束时发送"[DONE]"标记
+    """
     try:
+        # 验证消息内容
         message = req.message.strip()
         if not message:
             return JSONResponse(
@@ -154,26 +348,37 @@ async def chat_stream_endpoint(req: ChatRequest):
                 content={"error": "消息不能为空"}
             )
         
-        # 获取功能特定的系统
+        # 获取功能特定的LLM系统
         system = get_llm_system(req.function)
         
         async def generate():
-            """生成流式响应"""
+            """
+            生成流式响应的异步生成器
+            
+            Yields:
+                str: SSE格式的数据块，包含生成的内容片段或错误信息
+            """
             try:
+                # 逐步获取LLM生成的内容片段
                 async for chunk in get_response_stream(message, system, req.function, req.user_id):
+                    # 将内容片段包装为SSE格式
                     yield f"data: {json.dumps({'content': chunk}, ensure_ascii=False)}\n\n"
+                
+                # 发送结束标记
                 yield f"data: [DONE]\n\n"
+                
             except Exception as e:
                 logger.error(f"流式响应生成失败: {str(e)}")
+                # 发送错误信息
                 yield f"data: {json.dumps({'error': str(e)}, ensure_ascii=False)}\n\n"
         
         return StreamingResponse(
             generate(),
             media_type="text/plain",
             headers={
-                "Cache-Control": "no-cache",
-                "Connection": "keep-alive",
-                "Content-Type": "text/plain; charset=utf-8"
+                "Cache-Control": "no-cache",           # 禁用缓存
+                "Connection": "keep-alive",            # 保持连接
+                "Content-Type": "text/plain; charset=utf-8"  # 设置字符编码
             }
         )
         

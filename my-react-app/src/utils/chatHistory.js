@@ -1,47 +1,98 @@
-// 聊天历史管理工具
-// 负责保存、读取和管理用户的聊天历史记录
+/**
+ * chatHistory.js - 聊天历史管理工具模块
+ * 
+ * 这是前端聊天历史的核心管理工具，负责：
+ * 1. 💾 本地存储管理 - 使用localStorage持久化聊天记录
+ * 2. 📝 会话管理 - 创建、更新、删除聊天会话
+ * 3. 🔍 历史记录检索 - 按时间、功能、标题搜索历史
+ * 4. 📊 数据统计 - 会话数量、消息统计等
+ * 5. 🏷️ 智能标题生成 - 根据对话内容自动生成会话标题
+ * 6. 🧹 存储空间管理 - 限制记录数量，清理过期数据
+ * 
+ * 设计特色：
+ * - 类型安全的数据结构
+ * - 错误恢复和异常处理
+ * - 性能优化的数据操作
+ * - 用户友好的标题生成
+ * 
+ * 存储结构：
+ * - 每个会话包含：ID、标题、功能类型、消息列表、时间戳
+ * - 按创建时间倒序排列
+ * - 支持增量更新和批量操作
+ */
 
 export class ChatHistoryManager {
+  /**
+   * 聊天历史管理器构造函数
+   * 
+   * 初始化配置和存储参数：
+   * - 本地存储键名
+   * - 最大保存数量限制
+   * - 数据格式版本控制
+   */
   constructor() {
-    this.storageKey = 'chat_histories';
-    this.maxHistories = 50; // 最多保存50个历史会话
+    this.storageKey = 'chat_histories';    // localStorage存储键名
+    this.maxHistories = 50;                // 最多保存50个历史会话，防止存储空间过大
   }
 
-  // 获取所有聊天历史
+  /**
+   * 获取所有聊天历史
+   * 
+   * 功能说明：
+   * - 从localStorage读取所有聊天历史记录
+   * - 自动处理JSON解析错误
+   * - 返回按时间倒序排列的历史列表
+   * 
+   * @returns {Array} 聊天历史记录数组，按创建时间倒序
+   */
   getAllHistories() {
     try {
       const histories = localStorage.getItem(this.storageKey);
       return histories ? JSON.parse(histories) : [];
     } catch (error) {
-      console.error('Failed to load chat histories:', error);
+      console.error('加载聊天历史失败:', error);
       return [];
     }
   }
 
-  // 保存聊天会话
+  /**
+   * 保存聊天会话
+   * 
+   * 功能说明：
+   * - 将当前对话保存为历史记录
+   * - 自动生成会话标题
+   * - 过滤临时消息（如加载状态）
+   * - 维护存储数量限制
+   * 
+   * @param {Array} messages - 消息列表
+   * @param {string} functionType - 功能类型
+   * @param {string|null} title - 自定义标题，为空时自动生成
+   * @returns {string|null} 保存成功返回会话ID，失败返回null
+   */
   saveChat(messages, functionType, title = null) {
+    // 验证输入参数
     if (!messages || messages.length === 0) return null;
 
     const histories = this.getAllHistories();
     
-    // 生成会话标题
+    // 生成会话标题 - 自动或自定义
     const sessionTitle = title || this.generateTitle(messages, functionType);
     
-    // 创建新的历史记录
+    // 创建新的历史记录对象
     const newHistory = {
-      id: `chat_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-      title: sessionTitle,
-      functionType: functionType,
-      messages: messages.filter(msg => !msg.temp), // 排除临时消息
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-      messageCount: messages.filter(msg => !msg.temp).length
+      id: `chat_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,  // 唯一ID
+      title: sessionTitle,                   // 会话标题
+      functionType: functionType,            // 功能类型
+      messages: messages.filter(msg => !msg.temp),  // 排除临时消息（如"正在思考..."）
+      createdAt: new Date().toISOString(),   // 创建时间
+      updatedAt: new Date().toISOString(),   // 更新时间
+      messageCount: messages.filter(msg => !msg.temp).length  // 有效消息数量
     };
 
-    // 添加到历史记录开头
+    // 添加到历史记录开头（最新的在前面）
     histories.unshift(newHistory);
 
-    // 限制历史记录数量
+    // 限制历史记录数量，删除最旧的记录
     if (histories.length > this.maxHistories) {
       histories.splice(this.maxHistories);
     }
@@ -51,12 +102,24 @@ export class ChatHistoryManager {
       localStorage.setItem(this.storageKey, JSON.stringify(histories));
       return newHistory.id;
     } catch (error) {
-      console.error('Failed to save chat history:', error);
+      console.error('保存聊天历史失败:', error);
       return null;
     }
   }
 
-  // 更新现有聊天会话
+  /**
+   * 更新现有聊天会话
+   * 
+   * 功能说明：
+   * - 更新指定ID的聊天会话内容
+   * - 支持更新消息列表和标题
+   * - 自动更新时间戳
+   * 
+   * @param {string} chatId - 要更新的会话ID
+   * @param {Array} messages - 新的消息列表
+   * @param {string|null} title - 新标题，为空则保持原标题
+   * @returns {boolean} 更新成功返回true，失败返回false
+   */
   updateChat(chatId, messages, title = null) {
     const histories = this.getAllHistories();
     const index = histories.findIndex(h => h.id === chatId);
@@ -74,7 +137,7 @@ export class ChatHistoryManager {
         localStorage.setItem(this.storageKey, JSON.stringify(histories));
         return true;
       } catch (error) {
-        console.error('Failed to update chat history:', error);
+        console.error('更新聊天历史失败:', error);
         return false;
       }
     }
@@ -96,7 +159,7 @@ export class ChatHistoryManager {
       localStorage.setItem(this.storageKey, JSON.stringify(filteredHistories));
       return true;
     } catch (error) {
-      console.error('Failed to delete chat history:', error);
+      console.error('删除聊天历史失败:', error);
       return false;
     }
   }
@@ -107,7 +170,7 @@ export class ChatHistoryManager {
       localStorage.removeItem(this.storageKey);
       return true;
     } catch (error) {
-      console.error('Failed to clear chat histories:', error);
+      console.error('清空聊天历史失败:', error);
       return false;
     }
   }

@@ -1,3 +1,9 @@
+/**
+ * Register.jsx - 用户注册页面
+ * 
+ * 负责新用户账户创建、注册表单验证和注册成功后的自动登录
+ */
+
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';

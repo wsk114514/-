@@ -1,8 +1,36 @@
+/**
+ * FunctionContext.jsx - 功能状态管理Context
+ * 
+ * 这是应用的核心状态管理组件，负责：
+ * 1. 🎯 多功能模式管理 - 支持5种不同的对话模式
+ * 2. 💬 消息历史管理 - 每个功能独立的消息存储
+ * 3. 🔄 流式响应控制 - 实时消息流的管理和中止
+ * 4. 📱 URL同步 - 功能类型与路由的同步
+ * 5. 🔧 错误处理 - 统一的错误处理和恢复机制
+ * 
+ * 支持的功能模式:
+ * - general: 通用助手 (默认)
+ * - play: 游戏推荐
+ * - game_guide: 游戏攻略  
+ * - doc_qa: 文档问答
+ * - game_wiki: 游戏百科
+ */
+
 import React, { createContext, useState, useContext, useEffect, useCallback, useRef } from 'react';
 import { getResponseStream } from '../services/api';
 
+// 创建功能状态Context
 const FunctionContext = createContext();
 
+/**
+ * useFunctionContext Hook
+ * 
+ * 用于在组件中访问功能状态和操作方法
+ * 必须在FunctionProvider内部使用
+ * 
+ * @returns {Object} 功能状态和操作方法
+ * @throws {Error} 如果在Provider外部使用
+ */
 export const useFunctionContext = () => {
   const context = useContext(FunctionContext);
   if (!context) {
@@ -11,42 +39,86 @@ export const useFunctionContext = () => {
   return context;
 };
 
+/**
+ * FunctionProvider - 功能状态提供者组件
+ * 
+ * 为整个应用提供功能状态管理，包括：
+ * - 当前激活的功能类型
+ * - 各功能独立的消息历史
+ * - 加载状态和错误处理
+ * - 流式响应控制
+ */
 export const FunctionProvider = ({ children }) => {
+  // === 核心状态管理 ===
+  
+  // 当前激活的功能类型，默认为通用助手
   const [currentFunctionType, setCurrentFunctionType] = useState('general');
+  
+  // 全局加载状态，用于控制UI反馈
   const [isLoading, setIsLoading] = useState(false);
   
-  // 用于控制流式响应的中止
+  // 流式响应控制器引用，用于中止正在进行的请求
   const abortControllerRef = useRef(null);
   
-  // 跟踪当前聊天是否是从历史记录加载的（用于防止重复保存）
+  // 标记当前聊天是否从历史记录加载（防止重复保存）
   const [isCurrentChatFromHistory, setIsCurrentChatFromHistory] = useState(false);
   
-  // 每个功能独立的消息历史
+  // === 消息历史管理 ===
+  
+  // 每个功能类型独立的消息历史存储
+  // 保证不同功能间的消息不会互相干扰
   const [messagesByFunction, setMessagesByFunction] = useState({
-    general: [],
-    play: [],
-    game_guide: [],
-    doc_qa: [],
-    game_wiki: []
+    general: [],      // 通用助手消息
+    play: [],         // 游戏推荐消息
+    game_guide: [],   // 游戏攻略消息
+    doc_qa: [],       // 文档问答消息
+    game_wiki: []     // 游戏百科消息
   });
 
-  // 有效的功能类型
+  // === 配置常量 ===
+  
+  // 系统支持的所有功能类型
+  // 系统支持的所有功能类型配置
   const VALID_FUNCTION_TYPES = ['play', 'game_guide', 'doc_qa', 'game_wiki', 'general'];
 
-  // 从URL路径获取功能类型
+  // ========================= URL同步机制 =========================
+  
+  /**
+   * 监听URL变化，自动同步功能类型
+   * 支持通过URL直接访问特定功能页面
+   * 保证URL和应用状态的一致性
+   */
   useEffect(() => {
     const pathSegments = window.location.pathname.split('/');
     const functionTypeFromURL = pathSegments[pathSegments.length - 1];
     
+    // 只有有效的功能类型才进行切换，防止无效状态
     if (VALID_FUNCTION_TYPES.includes(functionTypeFromURL)) {
       setCurrentFunctionType(functionTypeFromURL);
     }
   }, []);
 
-  // 获取当前功能的消息
+  // ========================= 派生状态 =========================
+  
+  /**
+   * 获取当前功能的消息列表
+   * 自动返回当前激活功能的消息历史
+   */
   const messages = messagesByFunction[currentFunctionType] || [];
 
-  // 切换功能类型（不清除记忆）
+  // ========================= 核心操作方法 =========================
+  
+  /**
+   * 切换功能类型
+   * 
+   * 功能说明：
+   * - 保持各功能的消息历史独立
+   * - 不清除任何数据，支持无缝切换
+   * - 自动验证功能类型的有效性
+   * - 实现多模式对话的核心逻辑
+   * 
+   * @param {string} functionType - 目标功能类型 (play/game_guide/doc_qa/game_wiki/general)
+   */
   const switchFunction = useCallback((functionType) => {
     if (VALID_FUNCTION_TYPES.includes(functionType)) {
       setCurrentFunctionType(functionType);
@@ -55,7 +127,16 @@ export const FunctionProvider = ({ children }) => {
     }
   }, []);
 
-  // 添加消息到当前功能
+  /**
+   * 添加消息到当前功能
+   * 
+   * 功能说明：
+   * - 将新消息添加到当前激活功能的消息历史中
+   * - 保持消息的时序性和完整性
+   * - 重置历史记录标记，表示聊天已变成新对话
+   * 
+   * @param {Object} message - 消息对象，包含content、isUser、timestamp等字段
+   */
   const addMessage = useCallback((message) => {
     setMessagesByFunction(prev => ({
       ...prev,
@@ -65,7 +146,14 @@ export const FunctionProvider = ({ children }) => {
     setIsCurrentChatFromHistory(false);
   }, [currentFunctionType]);
 
-  // 清空当前功能的消息
+  /**
+   * 清空当前功能的消息
+   * 
+   * 功能说明：
+   * - 清除当前激活功能的所有消息历史
+   * - 用于用户主动清理对话或开始新对话
+   * - 重置相关状态标记
+   */
   const clearMessages = useCallback(() => {
     setMessagesByFunction(prev => ({
       ...prev,
@@ -75,12 +163,28 @@ export const FunctionProvider = ({ children }) => {
     setIsCurrentChatFromHistory(false);
   }, [currentFunctionType]);
 
-  // 重置历史记录标记（当用户开始新对话或发送新消息时）
+  /**
+   * 重置历史记录标记
+   * 
+   * 功能说明：
+   * - 标记当前对话为新对话
+   * - 用于区分从历史记录加载的对话和用户新创建的对话
+   * - 防止重复保存历史记录
+   */
   const markChatAsNew = useCallback(() => {
     setIsCurrentChatFromHistory(false);
   }, []);
 
-  // 设置当前功能的消息
+  /**
+   * 设置当前功能的消息
+   * 
+   * 功能说明：
+   * - 支持直接设置消息数组或通过函数更新
+   * - 主要用于从历史记录加载对话
+   * - 提供灵活的消息状态更新机制
+   * 
+   * @param {Array|Function} messagesOrUpdater - 消息数组或更新函数
+   */
   const setMessages = useCallback((messagesOrUpdater) => {
     setMessagesByFunction(prev => {
       const currentMessages = prev[currentFunctionType] || [];

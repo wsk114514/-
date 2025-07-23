@@ -1,3 +1,9 @@
+/**
+ * index.css - 全局基础样式
+ * 
+ * 负责应用的全局样式重置、基础字体设置和通用样式定义
+ */
+
 :root {
   font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
   line-height: 1.5;

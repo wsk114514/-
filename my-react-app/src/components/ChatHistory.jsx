@@ -1,3 +1,9 @@
+/**
+ * ChatHistory.jsx - 聊天历史记录组件
+ * 
+ * 负责显示、管理和操作用户的聊天历史记录
+ */
+
 import React, { useState, useEffect, useCallback } from 'react';
 import { chatHistoryManager } from '../utils/chatHistory';
 import { useFunctionContext } from '../context/FunctionContext';
@@ -28,7 +34,7 @@ const ChatHistory = ({ isOpen, onClose, onLoadChat }) => {
       setHistories(allHistories);
       setFilteredHistories(allHistories);
     } catch (error) {
-      console.error('Failed to load chat histories:', error);
+      console.error('加载聊天历史记录失败:', error);
     } finally {
       setLoading(false);
     }

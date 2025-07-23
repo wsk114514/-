@@ -1,3 +1,27 @@
+"""
+document_processing.py - 文档处理与向量化模块
+
+这是RAG（检索增强生成）系统的核心组件，负责：
+1. 📄 多格式文档加载 - 支持TXT、PDF、DOCX文件
+2. 🔤 智能文本分割 - 递归字符分割，保持语义完整性
+3. 🧮 向量化存储 - 使用ChromaDB构建向量数据库
+4. 🔍 相似性检索 - 基于嵌入向量的文档检索
+5. 🗑️ 资源管理 - 自动内存管理和实例清理
+6. 🌐 多编码支持 - 智能检测和处理多种文本编码
+
+技术栈:
+- LangChain: 文档加载和处理框架
+- ChromaDB: 向量数据库
+- Ollama Embeddings: 本地嵌入模型
+- RecursiveCharacterTextSplitter: 智能文本分割
+
+设计特色:
+- 支持多种文档格式的统一处理
+- 智能编码检测，兼容中文环境
+- 资源生命周期自动管理
+- 错误恢复和异常处理机制
+"""
+
 import os
 import shutil
 import time
@@ -8,7 +32,9 @@ from langchain_community.vectorstores import Chroma
 from langchain_ollama import OllamaEmbeddings  # 更新后的导入方式
 import logging
 
-# 禁用 ChromaDB 的遥测功能
+# ========================= 环境配置 =========================
+
+# 禁用 ChromaDB 的遥测功能，保护用户隐私
 os.environ["ANONYMIZED_TELEMETRY"] = "False"
 
 # 设置Chroma数据库路径
@@ -16,18 +42,47 @@ CHROMA_PATH = "chroma_db"
 # 确保目录存在
 os.makedirs(CHROMA_PATH, exist_ok=True)
 
+# ========================= 全局状态管理 =========================
+
 # 全局变量用于跟踪活跃的向量存储实例
+# 用于实现资源生命周期管理和内存优化
 _active_vector_stores = []
 
-# 配置日志
+# ========================= 日志配置 =========================
+
+# 配置日志系统，便于调试和监控
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+# ========================= 文档加载处理 =========================
+
 def process_uploaded_file(file_path: str):
-    """根据文件类型加载文档"""
+    """
+    根据文件类型加载文档
+    
+    功能说明：
+    - 支持多种文档格式（TXT、PDF、DOCX）
+    - 智能编码检测，优先中文编码
+    - 统一的文档对象输出格式
+    - 完善的错误处理机制
+    
+    Args:
+        file_path (str): 上传文件的绝对路径
+        
+    Returns:
+        list: LangChain文档对象列表
+        
+    Raises:
+        ValueError: 不支持的文件格式或编码解析失败
+        FileNotFoundError: 文件不存在
+        
+    Note:
+        文本文件支持多种编码自动检测：utf-8, gbk, gb2312, utf-8-sig, latin-1
+    """
     try:
         if file_path.endswith('.txt'):
             # 尝试多种编码方式加载文本文件
+            # 优先使用中文编码，确保中文文档正常加载
             loader = None
             encodings = ['utf-8', 'gbk', 'gb2312', 'utf-8-sig', 'latin-1']
             

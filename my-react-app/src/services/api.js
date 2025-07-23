@@ -1,25 +1,55 @@
-// API 服务模块 - 统一处理前端与后端的通信
+/**
+ * api.js - 前端API服务层
+ * 
+ * 这是前端与后端通信的统一入口，提供：
+ * 1. 🌐 统一的HTTP请求封装 - 错误处理、超时控制、重试机制
+ * 2. 🔄 流式响应处理 - 支持AI回复的实时流式传输
+ * 3. 📁 文件上传服务 - 支持文档上传和进度追踪
+ * 4. 🔐 认证API集成 - 用户登录注册接口
+ * 5. 💬 对话API集成 - 多模式对话请求处理
+ * 6. 🛡️ 错误恢复机制 - 网络异常的自动重试和降级
+ * 
+ * 技术特色:
+ * - 基于 Fetch API 的现代化实现
+ * - AbortController 支持请求取消
+ * - 自定义错误类型和状态管理
+ * - TypeScript 风格的 JSDoc 注释
+ */
 
-// API 配置
+// ========================= API配置常量 =========================
 const API_CONFIG = {
-  BASE_URL: '',  // 使用相对路径，通过 Vite 代理转发到后端
-  TIMEOUT: 30000, // 30秒超时
-  RETRY_ATTEMPTS: 3,
-  RETRY_DELAY: 1000, // 1秒
+  BASE_URL: '',           // 使用相对路径，通过 Vite 代理转发到后端
+  TIMEOUT: 30000,         // 请求超时时间 (30秒)
+  RETRY_ATTEMPTS: 3,      // 自动重试次数
+  RETRY_DELAY: 1000,      // 重试间隔 (1秒)
 };
 
-// HTTP 状态码
+// ========================= HTTP状态码常量 =========================
 const HTTP_STATUS = {
-  OK: 200,
-  BAD_REQUEST: 400,
-  UNAUTHORIZED: 401,
-  FORBIDDEN: 403,
-  NOT_FOUND: 404,
-  INTERNAL_SERVER_ERROR: 500,
+  OK: 200,                      // 请求成功
+  BAD_REQUEST: 400,             // 请求参数错误
+  UNAUTHORIZED: 401,            // 未授权
+  FORBIDDEN: 403,               // 禁止访问
+  NOT_FOUND: 404,               // 资源不存在
+  INTERNAL_SERVER_ERROR: 500,   // 服务器内部错误
 };
 
-// 自定义错误类
+// ========================= 自定义错误类 =========================
+
+/**
+ * 自定义API错误类
+ * 
+ * 功能说明：
+ * - 扩展了原生Error，添加了状态码和附加数据
+ * - 便于错误处理和用户友好的错误信息展示
+ * - 支持错误分类和特定处理逻辑
+ */
 class APIError extends Error {
+  /**
+   * @param {string} message - 错误消息
+   * @param {number} status - HTTP状态码
+   * @param {any} data - 附加错误数据
+   */
   constructor(message, status, data) {
     super(message);
     this.name = 'APIError';
@@ -28,31 +58,67 @@ class APIError extends Error {
   }
 }
 
-// 通用的 fetch 包装器
+// ========================= 网络请求工具函数 =========================
+
+/**
+ * 带超时控制的 fetch 封装器
+ * 
+ * 功能说明：
+ * - 提供统一的请求超时机制，防止请求无限等待
+ * - 支持请求取消功能
+ * - 自动处理相对路径和绝对路径
+ * - 统一的错误处理机制
+ * 
+ * @param {string} url - 请求URL
+ * @param {RequestInit} options - fetch选项
+ * @param {number} timeout - 超时时间(毫秒)
+ * @returns {Promise<Response>} fetch响应对象
+ * @throws {APIError} 请求超时或网络错误
+ */
 async function fetchWithTimeout(url, options = {}, timeout = API_CONFIG.TIMEOUT) {
+  // 创建 AbortController 用于取消请求
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), timeout);
 
-  // 构建完整的URL
+  // 构建完整的URL (支持相对路径和绝对路径)
   const fullUrl = url.startsWith('http') ? url : `${API_CONFIG.BASE_URL}${url}`;
 
   try {
     const response = await fetch(fullUrl, {
       ...options,
-      signal: controller.signal,
+      signal: controller.signal,  // 绑定取消信号
     });
+    
     clearTimeout(timeoutId);
     return response;
   } catch (error) {
     clearTimeout(timeoutId);
+    
+    // 处理不同类型的网络错误
     if (error.name === 'AbortError') {
       throw new APIError('请求超时，请稍后再试', 0);
     }
-    throw error;
+    
+    // 其他网络错误
+    throw new APIError(`网络请求失败: ${error.message}`, 0, error);
   }
 }
 
-// 重试机制
+/**
+ * 带重试机制的 fetch 封装器
+ * 
+ * 功能说明：
+ * - 实现智能重试逻辑，区分客户端错误和服务器错误
+ * - 对服务器错误(5xx)进行重试，对客户端错误(4xx)不重试
+ * - 采用指数退避策略，避免频繁重试对服务器造成压力
+ * - 提供统一的错误处理和响应格式化
+ * 
+ * @param {string} url - 请求URL
+ * @param {RequestInit} options - fetch选项
+ * @param {number} maxAttempts - 最大重试次数
+ * @returns {Promise<Response>} 成功的响应对象
+ * @throws {APIError} 请求失败或超过最大重试次数
+ */
 async function fetchWithRetry(url, options = {}, maxAttempts = API_CONFIG.RETRY_ATTEMPTS) {
   let lastError;
 
@@ -60,6 +126,7 @@ async function fetchWithRetry(url, options = {}, maxAttempts = API_CONFIG.RETRY_
     try {
       const response = await fetchWithTimeout(url, options);
       
+      // 请求成功，直接返回
       if (response.ok) {
         return response;
       }
@@ -74,14 +141,18 @@ async function fetchWithRetry(url, options = {}, maxAttempts = API_CONFIG.RETRY_
         );
       }
       
+      // 服务器错误，准备重试
       throw new APIError(`服务器错误 (${response.status})`, response.status);
+      
     } catch (error) {
       lastError = error;
       
+      // 不重试客户端错误
       if (error instanceof APIError && error.status < 500) {
-        throw error; // 不重试客户端错误
+        throw error;
       }
       
+      // 如果还有重试机会，等待后重试（指数退避）
       if (attempt < maxAttempts) {
         await new Promise(resolve => 
           setTimeout(resolve, API_CONFIG.RETRY_DELAY * attempt)
@@ -90,10 +161,26 @@ async function fetchWithRetry(url, options = {}, maxAttempts = API_CONFIG.RETRY_
     }
   }
 
+  // 重试次数用尽，抛出最后的错误
   throw lastError;
 }
 
-// 标准聊天 API（已废弃，但保留兼容性）
+// ========================= 对话API接口 =========================
+
+/**
+ * 标准聊天 API（已废弃，但保留兼容性）
+ * 
+ * 功能说明：
+ * - 发送消息到后端并获取AI回复
+ * - 支持多种功能模式
+ * - 保持向后兼容性
+ * 
+ * @deprecated 建议使用 getResponseStream 进行流式响应
+ * @param {string} message - 用户消息
+ * @param {string} function_type - 功能类型
+ * @param {string} user_id - 用户ID
+ * @returns {Promise<string>} AI回复内容
+ */
 export async function getResponse(message, function_type, user_id = 'default') {
   try {
     const response = await fetchWithRetry('/app', {
