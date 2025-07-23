@@ -183,6 +183,11 @@ const Sidebar = () => {
         }
     }, [logout, navigate]);
 
+    // 返回欢迎页面
+    const handleBackToWelcome = useCallback(() => {
+        navigate('/welcome');
+    }, [navigate]);
+
     return (
         <>
         <aside className="sidebar">
@@ -235,6 +240,13 @@ const Sidebar = () => {
             {/* 底部功能按钮 */}
             {user && (
                 <div className="sidebar-footer">
+                    <button 
+                        className="welcome-btn" 
+                        onClick={handleBackToWelcome}
+                        title="返回欢迎页面"
+                    >
+                        🏠 返回首页
+                    </button>
                     <button 
                         className="new-chat-btn" 
                         onClick={handleStartNewChat}

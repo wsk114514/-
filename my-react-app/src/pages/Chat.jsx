@@ -3,7 +3,7 @@ import Sidebar from '../components/Sidebar';
 import ChatBubble from '../components/ChatBubble';
 import InputBar from '../components/InputBar';
 import { useFunctionContext } from '../context/FunctionContext';
-import { useLocation, useSearchParams } from 'react-router-dom';
+import { useLocation, useSearchParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import { getCurrentUserId, getSessionInfo } from '../utils/userSession';
@@ -45,6 +45,9 @@ const Chat = () => {
   
   // 主题状态：深色/浅色模式管理
   const { theme, toggleTheme } = useTheme();
+  
+  // 导航函数：用于页面跳转
+  const navigate = useNavigate();
   
   // ========================= Refs 引用管理 =========================
   
@@ -130,27 +133,30 @@ const Chat = () => {
             <p className="function-description">{functionDescription}</p>
           </div>
           
-          {/* 添加主题切换按钮 */}
-          <div className="theme-toggle">
-            <button 
-              onClick={toggleTheme} 
-              className="theme-toggle-button"
-              aria-label={theme === 'dark' ? '切换到浅色主题' : '切换到深色主题'}
-            >
-              {theme === 'dark' ? '🌙' : '🌞'}
-            </button>
-          </div>
-          
-          {/* 消息统计 */}
-          <div className="chat-stats">
-            <span className="message-count">
-              消息: {messages.length}
-            </span>
-            {user && (
-              <span className="user-badge">
-                👤 {user.username}
+          {/* 右侧控制区域 */}
+          <div className="header-controls">
+            {/* 主题切换按钮 */}
+            <div className="theme-toggle">
+              <button 
+                onClick={toggleTheme} 
+                className="theme-toggle-button"
+                aria-label={theme === 'dark' ? '切换到浅色主题' : '切换到深色主题'}
+              >
+                {theme === 'dark' ? '🌙' : '🌞'}
+              </button>
+            </div>
+            
+            {/* 消息统计 */}
+            <div className="chat-stats">
+              <span className="message-count">
+                消息: {messages.length}
               </span>
-            )}
+              {user && (
+                <span className="user-badge">
+                  👤 {user.username}
+                </span>
+              )}
+            </div>
           </div>
         </div>
         

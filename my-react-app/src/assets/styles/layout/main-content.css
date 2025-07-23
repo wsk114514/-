@@ -44,6 +44,13 @@ main-content.css - 主内容区布局样式
     color: var(--text-secondary);
 }
 
+/* 右侧控制区域 */
+.header-controls {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-xl);
+}
+
 .message-count {
     padding: var(--spacing-xs) var(--spacing-sm);
     background: var(--bg-quaternary);
@@ -82,4 +89,74 @@ main-content.css - 主内容区布局样式
 .empty-chat-icon {
     font-size: 4em;
     margin-bottom: var(--spacing-lg);
+}
+
+/* ========== 响应式设计 ========== */
+
+/* 移动端适配 */
+@media (max-width: 768px) {
+    .function-header {
+        padding: var(--spacing-md) var(--spacing-lg);
+        flex-direction: column;
+        gap: var(--spacing-md);
+        align-items: stretch;
+    }
+    
+    .back-navigation {
+        align-self: flex-start;
+    }
+    
+    .function-title {
+        text-align: center;
+        order: 1;
+    }
+    
+    .function-title h2 {
+        font-size: var(--font-size-2xl);
+    }
+    
+    .header-controls {
+        justify-content: space-between;
+        order: 2;
+        gap: var(--spacing-lg);
+    }
+    
+    .chat-stats {
+        gap: var(--spacing-sm);
+        font-size: 0.8em;
+    }
+    
+    .chat-area {
+        padding: var(--spacing-lg) var(--spacing-xl);
+        gap: var(--spacing-lg);
+    }
+}
+
+@media (max-width: 480px) {
+    .function-header {
+        padding: var(--spacing-sm) var(--spacing-md);
+    }
+    
+    .function-title h2 {
+        font-size: var(--font-size-xl);
+    }
+    
+    .function-description {
+        font-size: 0.8em;
+    }
+    
+    .header-controls {
+        flex-direction: column;
+        gap: var(--spacing-sm);
+    }
+    
+    .chat-stats {
+        justify-content: center;
+    }
+    
+    .message-count,
+    .user-badge {
+        padding: 4px 8px;
+        font-size: 0.75em;
+    }
 }
