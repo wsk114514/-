@@ -50,6 +50,9 @@ const Sidebar = () => {
             // 清除前端消息
             clearMessages();
             
+            // 等待一小段时间确保状态更新完成
+            await new Promise(resolve => setTimeout(resolve, 100));
+            
             // 清除后端对应功能的记忆
             await clearFunctionMemory(currentFunctionType);
             

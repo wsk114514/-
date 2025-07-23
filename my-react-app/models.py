@@ -22,7 +22,7 @@ models.py - Pydantic数据模型定义模块
 """
 
 from pydantic import BaseModel
-from typing import Optional
+from typing import Optional, List
 
 # ========================= 对话相关模型 =========================
 
@@ -34,6 +34,7 @@ class ChatRequest(BaseModel):
     - 用户输入的消息内容
     - 指定的功能类型（游戏推荐、攻略等）
     - 用户身份标识
+    - 对话历史上下文（用于维持对话记忆）
     
     用途：
     - /app 和 /app/stream 端点的请求体
@@ -43,6 +44,7 @@ class ChatRequest(BaseModel):
     message: str                           # 用户输入的消息内容，必填
     function: str                          # 功能类型：general/play/game_guide/doc_qa/game_wiki
     user_id: Optional[str] = "default"     # 用户标识符，用于多用户支持
+    chat_history: Optional[List[dict]] = []  # 对话历史，格式：[{"role": "user/assistant", "content": "..."}]
 
 class ChatResponse(BaseModel):
     """

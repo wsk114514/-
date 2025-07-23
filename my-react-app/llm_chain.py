@@ -258,10 +258,10 @@ def init_doc_qa_system(llm):
         return doc_qa_chain
 
 def init_system(function_type="general", user_id="default"):
-    """初始化对话系统 (LCEL版本)"""
+    """初始化对话系统 (LCEL版本) - 不使用记忆系统"""
     try:
         llm = init_llm()
-        memory = get_memory_for_function(function_type, user_id)  # 使用用户特定的记忆
+        # 注意：不再使用记忆系统，记忆由前端chat_history传递
         
         # 动态角色描述
         role_descriptions = {
@@ -271,53 +271,18 @@ def init_system(function_type="general", user_id="default"):
             "game_wiki": "你是睿玩智库的游戏百科助手形态，提供游戏的详细信息和背景知识，如果不清楚，请说不知道。"
         }
 
-        # LCEL提示词模板
-        template = """你的名字叫做睿玩智库。你有多种形态，请用中文回答用户的问题。下面是你的形态描述：
-        {role_description}
+        logger.info(f"LLM系统初始化成功 - 功能类型: {function_type}")
         
-        当前对话历史：
-        {chat_history}
-        
-        人类: {input}
-        AI助手:"""
-        
-        prompt = ChatPromptTemplate.from_template(template)
-        
-        # LCEL链构建
-        chain = (
-            {
-                "role_description": RunnableLambda(
-                    lambda x: role_descriptions.get(
-                        function_type,  # 使用传入的功能类型
-                        "你是睿玩智库的通用助手形态，帮助用户解决问题，如果不清楚，请说不知道。"
-                    )
-                ),
-                "chat_history": RunnableLambda(lambda x: memory.load_memory_variables({})["chat_history"]),
-                "input": itemgetter("input")
-            }
-            | prompt
-            | llm
-            | StrOutputParser()
-        )
-        
-        logger.info(f"对话系统(LCEL)为用户 {user_id} 的功能 {function_type} 初始化成功")
+        # 返回LLM实例和角色描述，不包含记忆系统
         return {
-            "chain": chain,
-            "memory": memory,
-            "llm": llm,  # 单独存储LLM对象
-            "function_type": function_type,
-            "user_id": user_id
+            "llm": llm,
+            "role_descriptions": role_descriptions,
+            "function_type": function_type
         }
+        
     except Exception as e:
-        logger.error(f"对话系统初始化失败: {str(e)}")
-        # 返回简单的错误处理链
-        return {
-            "chain": RunnableLambda(lambda x: "系统初始化失败，请检查配置"),
-            "memory": ConversationBufferMemory(),
-            "llm": None,
-            "function_type": function_type,
-            "user_id": user_id
-        }
+        logger.error(f"LLM系统初始化失败: {str(e)}")
+        raise
 
 def clear_memory(system, function_type=None, user_id=None):
     """清除对话记忆"""
@@ -351,37 +316,50 @@ def clear_memory(system, function_type=None, user_id=None):
     except Exception as e:
         logger.error(f"清除记忆失败: {str(e)}")
 
-def get_response(message: str, system: dict, function: str, user_id: str = "default") -> str:
-    """获取LLM响应 (LCEL版本)"""
+def get_response(message: str, system: dict, function: str, user_id: str = "default", chat_history: list = None) -> str:
+    """
+    获取LLM响应 (LCEL版本)
+    
+    Args:
+        message: 用户输入消息
+        system: 系统配置字典
+        function: 功能类型
+        user_id: 用户ID
+        chat_history: 对话历史 [{"role": "user/assistant", "content": "..."}]
+    """
     try:
-        # 获取用户和功能特定的记忆
-        function_memory = get_memory_for_function(function, user_id)
+        # 使用传入的chat_history，如果没有则使用空列表
+        if chat_history is None:
+            chat_history = []
+        
+        # 记录调试信息
+        logger.info(f"get_response收到chat_history长度: {len(chat_history)}")
+        
+        # 将chat_history转换为字符串格式
+        history_text = ""
+        for msg in chat_history[-10:]:  # 只使用最近10条记录，避免token过多
+            role = "人类" if msg.get("role") == "user" else "AI助手"
+            content = msg.get("content", "")
+            history_text += f"{role}: {content}\n"
+        
+        logger.info(f"转换后的历史文本长度: {len(history_text)}")
+        if history_text:
+            logger.info(f"历史文本预览: {history_text[:200]}...")
         
         # 文档问答功能
         if function == "doc_qa":
-            # 使用单独存储的LLM对象
             doc_qa_chain = init_doc_qa_system(system["llm"])
             try:
-                # 获取当前对话历史
-                chat_history = function_memory.load_memory_variables({})["chat_history"]
-                
                 result = doc_qa_chain.invoke({
                     "question": message,
-                    "chat_history": chat_history
+                    "chat_history": history_text
                 })
-                
-                # 将文档问答的结果保存到用户特定的记忆
-                function_memory.save_context(
-                    {"input": message},
-                    {"output": result}
-                )
-                
                 return result
             except Exception as e:  
                 logger.error(f"处理文档问答时出错: {str(e)}")
                 return "处理文档时发生错误，请稍后再试"
         
-        # 通用对话功能 - 创建一个临时的链，使用功能特定的记忆
+        # 通用对话功能
         llm = system["llm"]
         role_descriptions = {
             "play": "你是睿玩智库的游戏推荐助手形态，根据用户的喜好推荐游戏，如果不清楚，请说不知道。",
@@ -401,7 +379,7 @@ def get_response(message: str, system: dict, function: str, user_id: str = "defa
         
         prompt = ChatPromptTemplate.from_template(template)
         
-        # 使用功能特定的记忆创建链
+        # 创建处理链
         chain = (
             {
                 "role_description": RunnableLambda(
@@ -410,7 +388,7 @@ def get_response(message: str, system: dict, function: str, user_id: str = "defa
                         "你是睿玩智库的通用助手形态，帮助用户解决问题，如果不清楚，请说不知道。"
                     )
                 ),
-                "chat_history": RunnableLambda(lambda x: function_memory.load_memory_variables({})["chat_history"]),
+                "chat_history": RunnableLambda(lambda x: history_text),
                 "input": itemgetter("input")
             }
             | prompt
@@ -419,51 +397,45 @@ def get_response(message: str, system: dict, function: str, user_id: str = "defa
         )
         
         response = chain.invoke({"input": message})
-        
-        # 更新用户特定的记忆
-        function_memory.save_context(
-            {"input": message},
-            {"output": response}
-        )
-        
         return response.strip()
+        
     except Exception as e:
         logger.error(f"获取响应失败: {str(e)}")
         return "系统处理请求时出错，请稍后再试"
 
-async def get_response_stream(message: str, system: dict, function: str, user_id: str = "default"):
+async def get_response_stream(message: str, system: dict, function: str, user_id: str = "default", chat_history: list = None):
     """获取LLM流式响应"""
     try:
-        # 获取用户和功能特定的记忆
-        function_memory = get_memory_for_function(function, user_id)
+        # 使用传入的chat_history，如果没有则使用空列表
+        if chat_history is None:
+            chat_history = []
+        
+        # 将chat_history转换为字符串格式
+        history_text = ""
+        for msg in chat_history[-10:]:  # 只使用最近10条记录，避免token过多
+            role = "人类" if msg.get("role") == "user" else "AI助手"
+            content = msg.get("content", "")
+            history_text += f"{role}: {content}\n"
         
         # 文档问答功能
         if function == "doc_qa":
             doc_qa_chain = init_doc_qa_system(system["llm"])
             try:
-                chat_history = function_memory.load_memory_variables({})["chat_history"]
-                
                 # 使用 astream 进行流式处理
                 full_response = ""
                 async for chunk in doc_qa_chain.astream({
                     "question": message,
-                    "chat_history": chat_history
+                    "chat_history": history_text
                 }):
                     if chunk:
                         full_response += chunk
                         yield chunk
                 
-                # 保存完整响应到用户特定的记忆
-                function_memory.save_context(
-                    {"input": message},
-                    {"output": full_response}
-                )
-                
             except Exception as e:
                 logger.error(f"处理文档问答时出错: {str(e)}")
                 yield "处理文档时发生错误，请稍后再试"
         else:
-            # 通用对话功能 - 创建临时链使用功能特定的记忆
+            # 通用对话功能 - 创建临时链使用前端传入的历史记录
             llm = system["llm"]
             role_descriptions = {
                 "play": "你是睿玩智库的游戏推荐助手形态，根据用户的喜好推荐游戏，如果不清楚，请说不知道。",
@@ -488,7 +460,7 @@ async def get_response_stream(message: str, system: dict, function: str, user_id
             
             prompt = ChatPromptTemplate.from_template(template)
             
-            # 使用功能特定的记忆创建链
+            # 使用前端传入的历史记录创建链
             chain = (
                 {
                     "role_description": RunnableLambda(
@@ -497,7 +469,7 @@ async def get_response_stream(message: str, system: dict, function: str, user_id
                             "你是睿玩智库的通用助手形态，帮助用户解决问题，如果不清楚，请说不知道。"
                         )
                     ),
-                    "chat_history": RunnableLambda(lambda x: function_memory.load_memory_variables({})["chat_history"]),
+                    "chat_history": RunnableLambda(lambda x: history_text),
                     "input": itemgetter("input")
                 }
                 | prompt
@@ -510,12 +482,6 @@ async def get_response_stream(message: str, system: dict, function: str, user_id
                 if chunk:
                     full_response += chunk
                     yield chunk
-            
-            # 保存完整响应到用户特定的记忆
-            function_memory.save_context(
-                {"input": message},
-                {"output": full_response}
-            )
             
     except Exception as e:
         logger.error(f"获取流式响应失败: {str(e)}")

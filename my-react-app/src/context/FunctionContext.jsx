@@ -155,12 +155,18 @@ export const FunctionProvider = ({ children }) => {
    * - 重置相关状态标记
    */
   const clearMessages = useCallback(() => {
-    setMessagesByFunction(prev => ({
-      ...prev,
-      [currentFunctionType]: []
-    }));
+    console.log(`正在清除功能 ${currentFunctionType} 的消息...`);
+    setMessagesByFunction(prev => {
+      const newState = {
+        ...prev,
+        [currentFunctionType]: []
+      };
+      console.log(`清除后的消息状态:`, newState);
+      return newState;
+    });
     // 清空消息时重置历史记录标记，表示开始新对话
     setIsCurrentChatFromHistory(false);
+    console.log(`功能 ${currentFunctionType} 的消息已清除`);
   }, [currentFunctionType]);
 
   /**
@@ -274,6 +280,13 @@ export const FunctionProvider = ({ children }) => {
       // 创建新的 AbortController
       abortControllerRef.current = new AbortController();
       
+      // 准备聊天历史 - 取到重新生成消息之前的历史
+      const historyBeforeRegeneration = currentMessages.slice(0, messageIndex - 1);
+      const chat_history = historyBeforeRegeneration.map(msg => ({
+        role: msg.isUser ? 'user' : 'assistant',
+        content: msg.content
+      }));
+      
       let newResponse = '';
       await getResponseStream(randomPrompt, currentFunctionType, (chunk) => {
         newResponse += chunk;
@@ -286,7 +299,7 @@ export const FunctionProvider = ({ children }) => {
               : msg
           )
         }));
-      }, abortControllerRef.current);
+      }, abortControllerRef.current, 'default', chat_history);
       
     } catch (error) {
       console.error('重新生成消息失败:', error);

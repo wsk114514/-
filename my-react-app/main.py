@@ -301,11 +301,24 @@ async def chat_endpoint(req: ChatRequest):
                 content={"error": "消息不能为空"}
             )
         
+        # 记录接收到的chat_history用于调试
+        logger.info(f"=== 调试信息开始 ===")
+        logger.info(f"请求用户ID: {req.user_id}")
+        logger.info(f"请求功能类型: {req.function}")
+        logger.info(f"请求消息: {req.message}")
+        logger.info(f"接收到聊天历史，长度: {len(req.chat_history) if req.chat_history else 0}")
+        if req.chat_history:
+            logger.info(f"完整历史记录: {req.chat_history}")
+            logger.info(f"最近3条历史: {req.chat_history[-3:]}")
+        else:
+            logger.info("chat_history为空或None")
+        logger.info(f"=== 调试信息结束 ===")
+        
         # 获取功能特定的LLM系统
         system = get_llm_system(req.function)
         
         # 调用LLM链处理消息并获取回复
-        response = get_response(message, system, req.function, req.user_id)
+        response = get_response(message, system, req.function, req.user_id, req.chat_history)
         
         return ChatResponse(response=response)
         
@@ -348,6 +361,11 @@ async def chat_stream_endpoint(req: ChatRequest):
                 content={"error": "消息不能为空"}
             )
         
+        # 记录接收到的chat_history用于调试
+        logger.info(f"流式接收到聊天历史，长度: {len(req.chat_history) if req.chat_history else 0}")
+        if req.chat_history:
+            logger.info(f"最近3条历史: {req.chat_history[-3:]}")
+        
         # 获取功能特定的LLM系统
         system = get_llm_system(req.function)
         
@@ -360,7 +378,7 @@ async def chat_stream_endpoint(req: ChatRequest):
             """
             try:
                 # 逐步获取LLM生成的内容片段
-                async for chunk in get_response_stream(message, system, req.function, req.user_id):
+                async for chunk in get_response_stream(message, system, req.function, req.user_id, req.chat_history):
                     # 将内容片段包装为SSE格式
                     yield f"data: {json.dumps({'content': chunk}, ensure_ascii=False)}\n\n"
                 

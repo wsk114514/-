@@ -19,7 +19,8 @@ const InputBar = () => {
   const { 
     currentFunctionType, 
     addMessage, 
-    setMessages, 
+    setMessages,
+    messages,
     isLoading: contextLoading,
     abortResponse
   } = useFunctionContext();
@@ -114,6 +115,21 @@ const InputBar = () => {
     try {
       let aiResponse = '';
       
+      // 准备聊天历史 - 转换为后端期望的格式
+      const chat_history = messages.map(msg => ({
+        role: msg.isUser ? 'user' : 'assistant',
+        content: msg.content
+      }));
+      
+      console.log(`发送消息时的messages长度: ${messages.length}`);
+      console.log(`发送的chat_history:`, chat_history);
+      console.log(`即将发送的完整请求数据:`, {
+        message: message,
+        function: currentFunctionType,
+        user_id: getCurrentUserId(),
+        chat_history: chat_history
+      });
+      
       // 创建新的 AbortController
       abortControllerRef.current = new AbortController();
       
@@ -126,7 +142,7 @@ const InputBar = () => {
             ? { ...msg, content: aiResponse } 
             : msg
         ));
-      }, abortControllerRef.current, getCurrentUserId());
+      }, abortControllerRef.current, getCurrentUserId(), chat_history);
       
     } catch (error) {
       console.error('发送消息失败:', error);

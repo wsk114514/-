@@ -181,7 +181,7 @@ async function fetchWithRetry(url, options = {}, maxAttempts = API_CONFIG.RETRY_
  * @param {string} user_id - 用户ID
  * @returns {Promise<string>} AI回复内容
  */
-export async function getResponse(message, function_type, user_id = 'default') {
+export async function getResponse(message, function_type, user_id = 'default', chat_history = []) {
   try {
     const response = await fetchWithRetry('/app', {
       method: 'POST',
@@ -191,7 +191,8 @@ export async function getResponse(message, function_type, user_id = 'default') {
       body: JSON.stringify({
         message: message,
         function: function_type,
-        user_id: user_id
+        user_id: user_id,
+        chat_history: chat_history
       }),
     });
 
@@ -206,22 +207,28 @@ export async function getResponse(message, function_type, user_id = 'default') {
 }
 
 // 流式响应 API
-export async function getResponseStream(message, function_type, onChunk, abortController = null, user_id = 'default') {
+export async function getResponseStream(message, function_type, onChunk, abortController = null, user_id = 'default', chat_history = []) {
   if (!onChunk || typeof onChunk !== 'function') {
     throw new APIError('onChunk 回调函数是必需的', 0);
   }
 
   try {
+    const requestBody = {
+      message: message,
+      function: function_type,
+      user_id: user_id,
+      chat_history: chat_history
+    };
+    
+    console.log('API发送的请求体:', requestBody);
+    console.log('API发送的chat_history长度:', chat_history.length);
+    
     const fetchOptions = {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({
-        message: message,
-        function: function_type,
-        user_id: user_id
-      }),
+      body: JSON.stringify(requestBody),
     };
 
     // 如果提供了 AbortController，添加 signal
