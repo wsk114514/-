@@ -66,3 +66,20 @@ LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO")
 # API配置
 API_VERSION = "v1"
 API_PREFIX = f"/api/{API_VERSION}"
+
+# ========================= 聊天记录配置 =========================
+
+# 聊天记录管理配置
+CHAT_HISTORY_CONFIG = {
+    # 每个用户最大保存的聊天会话数量
+    "MAX_HISTORIES_PER_USER": 50,
+    
+    # 聊天记录存储键前缀
+    "STORAGE_KEY_PREFIX": "chat_histories",
+    
+    # 游客用户的存储键后缀
+    "GUEST_SUFFIX": "guest",
+    
+    # 是否启用用户独立聊天记录
+    "USER_ISOLATION_ENABLED": True
+}

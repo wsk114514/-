@@ -613,21 +613,29 @@ async def clear_uploaded_files_endpoint():
 async def login_endpoint(req: LoginRequest):
     """用户登录端点"""
     try:
-        if auth_manager.authenticate_user(req.username, req.password):
-            session_token = auth_manager.create_session(req.username)
+        # 使用新的数据库认证系统
+        auth_result = auth_manager.authenticate_user(req.username, req.password)
+        
+        if auth_result["success"]:
+            # 创建会话（传入用户信息）
+            session_token = auth_manager.create_session(auth_result["user"])
             logger.info(f"用户 {req.username} 登录成功")
             
             response = JSONResponse(
                 status_code=200,
-                content={"message": "登录成功", "session_token": session_token}
+                content={
+                    "message": "登录成功", 
+                    "session_token": session_token,
+                    "user": auth_result["user"]
+                }
             )
             response.set_cookie(key="session_token", value=session_token)
             return response
         else:
-            logger.warning(f"用户 {req.username} 登录失败：用户名或密码错误")
+            logger.warning(f"用户 {req.username} 登录失败：{auth_result['message']}")
             return JSONResponse(
                 status_code=401,
-                content={"error": "用户名或密码错误"}
+                content={"error": auth_result["message"]}
             )
     except Exception as e:
         logger.error(f"登录处理失败: {str(e)}")
@@ -641,14 +649,24 @@ async def login_endpoint(req: LoginRequest):
 async def register_endpoint(req: RegisterRequest):
     """用户注册端点"""
     try:
-        if auth_manager.register_user(req.username, req.password):
-            logger.info(f"用户 {req.username} 注册成功")
-            return SuccessResponse(message="注册成功")
+        # 使用新的数据库注册系统
+        # 如果没有提供邮箱，使用用户名@example.com作为默认值
+        email = req.email if req.email else f"{req.username}@example.com"
+        
+        register_result = auth_manager.register_user(
+            username=req.username, 
+            password=req.password,
+            email=email
+        )
+        
+        if register_result["success"]:
+            logger.info(f"用户 {req.username} 注册成功，用户ID: {register_result['user_id']}")
+            return SuccessResponse(message=register_result["message"])
         else:
-            logger.warning(f"用户 {req.username} 注册失败：用户名已存在")
+            logger.warning(f"用户 {req.username} 注册失败：{register_result['message']}")
             return JSONResponse(
                 status_code=400,
-                content={"error": "用户名已存在"}
+                content={"error": register_result["message"]}
             )
     except Exception as e:
         logger.error(f"注册处理失败: {str(e)}")

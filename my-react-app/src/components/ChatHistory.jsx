@@ -1,12 +1,13 @@
 /**
  * ChatHistory.jsx - 聊天历史记录组件
  * 
- * 负责显示、管理和操作用户的聊天历史记录
+ * 负责显示、管理和操作用户的聊天历史记录，支持用户独立的聊天记录
  */
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { chatHistoryManager } from '../utils/chatHistory';
+import { getChatHistoryManager } from '../utils/chatHistory';
 import { useFunctionContext } from '../context/FunctionContext';
+import { useAuth } from '../context/AuthContext';
 import '../assets/styles/components/chat-history.css';
 
 const ChatHistory = ({ isOpen, onClose, onLoadChat }) => {
@@ -16,6 +17,13 @@ const ChatHistory = ({ isOpen, onClose, onLoadChat }) => {
   const [selectedFunction, setSelectedFunction] = useState('all');
   const [loading, setLoading] = useState(false);
   const { VALID_FUNCTION_TYPES } = useFunctionContext();
+  const { user } = useAuth(); // 获取当前用户信息
+
+  // 获取用户特定的聊天记录管理器
+  const getChatManager = useCallback(() => {
+    const userId = user?.username || null;
+    return getChatHistoryManager(userId);
+  }, [user?.username]);
 
   // 功能类型映射
   const functionNames = {
@@ -30,7 +38,8 @@ const ChatHistory = ({ isOpen, onClose, onLoadChat }) => {
   const loadHistories = useCallback(() => {
     setLoading(true);
     try {
-      const allHistories = chatHistoryManager.getAllHistories();
+      const chatManager = getChatManager();
+      const allHistories = chatManager.getAllHistories();
       setHistories(allHistories);
       setFilteredHistories(allHistories);
     } catch (error) {
@@ -38,7 +47,7 @@ const ChatHistory = ({ isOpen, onClose, onLoadChat }) => {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [getChatManager]);
 
   // 筛选历史记录
   const filterHistories = useCallback(() => {
@@ -87,7 +96,8 @@ const ChatHistory = ({ isOpen, onClose, onLoadChat }) => {
     e.stopPropagation();
     e.preventDefault();
     if (confirm('确定要删除这个聊天记录吗？')) {
-      chatHistoryManager.deleteChat(chatId);
+      const chatManager = getChatManager();
+      chatManager.deleteChat(chatId);
       loadHistories();
     }
   };
@@ -95,14 +105,16 @@ const ChatHistory = ({ isOpen, onClose, onLoadChat }) => {
   // 清空所有历史记录
   const handleClearAll = () => {
     if (confirm('确定要清空所有聊天历史吗？此操作无法撤销。')) {
-      chatHistoryManager.clearAllHistories();
+      const chatManager = getChatManager();
+      chatManager.clearAllHistories();
       loadHistories();
     }
   };
 
   // 导出历史记录
   const handleExport = () => {
-    chatHistoryManager.exportHistories();
+    const chatManager = getChatManager();
+    chatManager.exportHistories();
   };
 
   // 格式化时间

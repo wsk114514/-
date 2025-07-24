@@ -10,6 +10,7 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 import { generateSmartQuestions, updateQuestionCollection } from '../utils/questionGenerator';
 import { getCollectionStats } from '../utils/gameCollection';
 
@@ -22,6 +23,12 @@ const SmartQuestions = ({ maxQuestions = 6, showTitle = true, compact = false })
   const [stats, setStats] = useState({});
   
   const navigate = useNavigate();
+  const { user } = useAuth(); // 获取当前用户信息
+  
+  // 获取用户ID（用于收藏隔离）
+  const getUserId = useCallback(() => {
+    return user?.username || null;
+  }, [user?.username]);
 
   // ========================= 问题生成和更新 =========================
 
@@ -33,15 +40,17 @@ const SmartQuestions = ({ maxQuestions = 6, showTitle = true, compact = false })
       setLoading(true);
       setError(null);
       
+      const userId = getUserId();
+      
       // 更新收藏数据
-      updateQuestionCollection();
+      updateQuestionCollection(userId);
       
       // 生成问题
-      const generatedQuestions = generateSmartQuestions(maxQuestions);
+      const generatedQuestions = generateSmartQuestions(maxQuestions, userId);
       setQuestions(generatedQuestions);
       
       // 获取统计信息
-      const collectionStats = getCollectionStats();
+      const collectionStats = getCollectionStats(userId);
       setStats(collectionStats);
       
     } catch (err) {
@@ -50,7 +59,7 @@ const SmartQuestions = ({ maxQuestions = 6, showTitle = true, compact = false })
     } finally {
       setLoading(false);
     }
-  }, [maxQuestions]);
+  }, [maxQuestions, getUserId]);
 
   /**
    * 初始化加载问题

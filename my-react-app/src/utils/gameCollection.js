@@ -2,17 +2,32 @@
  * gameCollection.js - 游戏收藏管理工具
  * 
  * 提供游戏收藏的本地存储和管理功能：
- * 1. 📚 收藏游戏添加/删除
+ * 1. 📚 收藏游戏添加/删除（支持用户隔离）
  * 2. 📋 收藏列表查看和管理
  * 3. 🔍 收藏游戏搜索和过滤
- * 4. 💾 本地存储持久化
+ * 4. 💾 本地存储持久化（按用户独立存储）
  * 5. 🏷️ 游戏分类和标签管理
+ * 6. 👤 用户独立收藏系统
  */
 
 // ========================= 存储键常量 =========================
 const STORAGE_KEYS = {
-  GAME_COLLECTION: 'game_collection',
+  GAME_COLLECTION: 'game_collection',      // 全局收藏（向后兼容）
   COLLECTION_SETTINGS: 'collection_settings'
+};
+
+/**
+ * 获取用户特定的存储键
+ * 
+ * @param {string|null} userId - 用户ID，null表示游客
+ * @returns {object} 用户特定的存储键对象
+ */
+const getUserStorageKeys = (userId = null) => {
+  const userSuffix = userId ? `_${userId}` : '_guest';
+  return {
+    GAME_COLLECTION: `game_collection${userSuffix}`,
+    COLLECTION_SETTINGS: `collection_settings${userSuffix}`
+  };
 };
 
 // ========================= 游戏收藏数据结构 =========================
@@ -36,9 +51,24 @@ const STORAGE_KEYS = {
 
 // ========================= 收藏管理类 =========================
 class GameCollectionManager {
-  constructor() {
+  constructor(userId = null) {
+    this.userId = userId;
+    this.storageKeys = getUserStorageKeys(userId);
     this.collection = this.loadCollection();
     this.settings = this.loadSettings();
+  }
+
+  /**
+   * 更新用户ID并重新加载数据
+   * 
+   * @param {string|null} userId - 新的用户ID
+   */
+  setUserId(userId) {
+    this.userId = userId;
+    this.storageKeys = getUserStorageKeys(userId);
+    this.collection = this.loadCollection();
+    this.settings = this.loadSettings();
+    console.log(`🔄 切换游戏收藏管理器 - 用户: ${userId || '游客'}`);
   }
 
   /**
@@ -46,7 +76,7 @@ class GameCollectionManager {
    */
   loadCollection() {
     try {
-      const stored = localStorage.getItem(STORAGE_KEYS.GAME_COLLECTION);
+      const stored = localStorage.getItem(this.storageKeys.GAME_COLLECTION);
       return stored ? JSON.parse(stored) : [];
     } catch (error) {
       console.error('加载游戏收藏列表失败:', error);
@@ -59,7 +89,7 @@ class GameCollectionManager {
    */
   saveCollection() {
     try {
-      localStorage.setItem(STORAGE_KEYS.GAME_COLLECTION, JSON.stringify(this.collection));
+      localStorage.setItem(this.storageKeys.GAME_COLLECTION, JSON.stringify(this.collection));
       return true;
     } catch (error) {
       console.error('保存游戏收藏列表失败:', error);
@@ -72,7 +102,7 @@ class GameCollectionManager {
    */
   loadSettings() {
     try {
-      const stored = localStorage.getItem(STORAGE_KEYS.COLLECTION_SETTINGS);
+      const stored = localStorage.getItem(this.storageKeys.COLLECTION_SETTINGS);
       return stored ? JSON.parse(stored) : {
         sortBy: 'addedDate', // 排序方式
         sortOrder: 'desc',   // 排序顺序
@@ -90,7 +120,7 @@ class GameCollectionManager {
    */
   saveSettings() {
     try {
-      localStorage.setItem(STORAGE_KEYS.COLLECTION_SETTINGS, JSON.stringify(this.settings));
+      localStorage.setItem(this.storageKeys.COLLECTION_SETTINGS, JSON.stringify(this.settings));
       return true;
     } catch (error) {
       console.error('保存收藏设置失败:', error);
@@ -482,21 +512,86 @@ class GameCollectionManager {
   }
 }
 
-// ========================= 导出实例和工具函数 =========================
+// ========================= 全局实例管理 =========================
 
-// 创建全局收藏管理器实例
-const gameCollectionManager = new GameCollectionManager();
+// 存储当前用户的游戏收藏管理器实例
+let currentGameCollectionManager = null;
+let currentUserId = null;
 
-// 导出便捷函数
-export const addGameToCollection = (gameData) => gameCollectionManager.addGame(gameData);
-export const removeGameFromCollection = (gameId) => gameCollectionManager.removeGame(gameId);
-export const updateGameInCollection = (gameId, updates) => gameCollectionManager.updateGame(gameId, updates);
-export const isGameInCollection = (gameId) => gameCollectionManager.isGameCollected(gameId);
-export const isGameInCollectionByName = (gameName) => gameCollectionManager.isGameCollectedByName(gameName);
-export const getGameCollection = (options) => gameCollectionManager.getCollection(options);
-export const getCollectionStats = () => gameCollectionManager.getStats();
-export const clearGameCollection = () => gameCollectionManager.clearCollection();
-export const exportGameCollection = (format) => gameCollectionManager.exportCollection(format);
+/**
+ * 获取或创建游戏收藏管理器实例
+ * 
+ * @param {string|null} userId - 用户ID
+ * @returns {GameCollectionManager} 游戏收藏管理器实例
+ */
+export const getGameCollectionManager = (userId = null) => {
+  // 如果用户ID发生变化，或者还没有实例，就创建新的
+  if (!currentGameCollectionManager || currentUserId !== userId) {
+    currentGameCollectionManager = new GameCollectionManager(userId);
+    currentUserId = userId;
+    console.log(`🔄 切换游戏收藏管理器 - 用户: ${userId || '游客'}`);
+  }
+  return currentGameCollectionManager;
+};
+
+/**
+ * 清理当前游戏收藏管理器（用户切换时调用）
+ */
+export const clearGameCollectionManager = () => {
+  currentGameCollectionManager = null;
+  currentUserId = null;
+  console.log('🧹 已清理游戏收藏管理器');
+};
+
+// 为了向后兼容，保留全局实例（游客模式）
+const gameCollectionManager = getGameCollectionManager();
+
+// ========================= 便捷函数（支持用户隔离） =========================
+
+export const addGameToCollection = (gameData, userId = null) => {
+  const manager = getGameCollectionManager(userId);
+  return manager.addGame(gameData);
+};
+
+export const removeGameFromCollection = (gameId, userId = null) => {
+  const manager = getGameCollectionManager(userId);
+  return manager.removeGame(gameId);
+};
+
+export const updateGameInCollection = (gameId, updates, userId = null) => {
+  const manager = getGameCollectionManager(userId);
+  return manager.updateGame(gameId, updates);
+};
+
+export const isGameInCollection = (gameId, userId = null) => {
+  const manager = getGameCollectionManager(userId);
+  return manager.isGameCollected(gameId);
+};
+
+export const isGameInCollectionByName = (gameName, userId = null) => {
+  const manager = getGameCollectionManager(userId);
+  return manager.isGameCollectedByName(gameName);
+};
+
+export const getGameCollection = (options, userId = null) => {
+  const manager = getGameCollectionManager(userId);
+  return manager.getCollection(options);
+};
+
+export const getCollectionStats = (userId = null) => {
+  const manager = getGameCollectionManager(userId);
+  return manager.getStats();
+};
+
+export const clearGameCollection = (userId = null) => {
+  const manager = getGameCollectionManager(userId);
+  return manager.clearCollection();
+};
+
+export const exportGameCollection = (format, userId = null) => {
+  const manager = getGameCollectionManager(userId);
+  return manager.exportCollection(format);
+};
 
 // 导出管理器类
 export { GameCollectionManager };

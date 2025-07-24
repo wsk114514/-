@@ -41,7 +41,8 @@ const Sidebar = () => {
             // 只有当有真正的用户对话时才保存
             if (hasRealUserConversation()) {
                 const currentChat = getCurrentChat();
-                saveChatHistory(currentChat.messages, currentChat.functionType);
+                const userId = user?.username || null;
+                saveChatHistory(currentChat.messages, currentChat.functionType, undefined, userId);
                 console.log('当前聊天已自动保存到历史记录');
             } else {
                 console.log('没有真正的用户对话，跳过保存');
@@ -154,7 +155,8 @@ const Sidebar = () => {
             if (currentFunctionType && currentFunctionType !== functionType) {
                 if (!isCurrentChatFromHistory && hasRealUserConversation()) {
                     const currentChat = getCurrentChat();
-                    saveChatHistory(currentChat.messages, currentChat.functionType);
+                    const userId = user?.username || null;
+                    saveChatHistory(currentChat.messages, currentChat.functionType, undefined, userId);
                     console.log('切换功能时自动保存了当前聊天');
                 } else if (isCurrentChatFromHistory) {
                     console.log('当前聊天是从历史记录加载的，跳过自动保存');

@@ -18,6 +18,7 @@
 
 import React, { createContext, useState, useContext, useEffect, useCallback, useRef } from 'react';
 import { getResponseStream } from '../services/api';
+import { onUserSwitch } from '../utils/userSwitchEvents';
 
 // 创建功能状态Context
 const FunctionContext = createContext();
@@ -80,6 +81,48 @@ export const FunctionProvider = ({ children }) => {
   // 系统支持的所有功能类型
   // 系统支持的所有功能类型配置
   const VALID_FUNCTION_TYPES = ['play', 'game_guide', 'doc_qa', 'game_wiki', 'general'];
+
+  // ========================= 用户切换监听 =========================
+  
+  /**
+   * 监听用户切换事件，自动清理聊天状态
+   * 防止用户切换时显示上一个用户的聊天内容
+   */
+  useEffect(() => {
+    const handleUserSwitch = (eventData) => {
+      console.log('🔄 检测到用户切换事件:', eventData);
+      
+      // 清空所有功能的消息记录
+      setMessagesByFunction({
+        general: [],
+        play: [],
+        game_guide: [],
+        doc_qa: [],
+        game_wiki: []
+      });
+      
+      // 重置相关状态
+      setIsCurrentChatFromHistory(false);
+      setIsLoading(false);
+      
+      // 中止任何进行中的请求
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+        abortControllerRef.current = null;
+      }
+      
+      console.log('✅ 已清理所有聊天状态，准备切换用户');
+    };
+
+    // 监听用户切换事件
+    onUserSwitch(handleUserSwitch);
+    
+    // 返回清理函数
+    return () => {
+      // 注意：这里不移除监听器，因为 userSwitchEvents 没有提供移除功能
+      // 在实际生产环境中应该实现监听器的移除
+    };
+  }, []);
 
   // ========================= URL同步机制 =========================
   

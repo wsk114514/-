@@ -2,7 +2,27 @@
  * GameCollection.jsx - 游戏收藏列表组件
  * 
  * 提供完整的游戏收藏管理界面，包括：
- * 1. 📋 收藏列表展示（网格/列表视图）
+   // 加载收藏数据
+  const loadCollectionData = useCallback(() => {
+    try {
+      setLoading(true);
+      const userId = getUserId();
+      const collectionData = getGameCollection({
+        search: searchTerm,
+        filter: filters,
+        sortBy,
+        sortOrder
+      }, userId);
+      const statsData = getCollectionStats(userId);
+      
+      setCollection(collectionData);
+      setStats(statsData);
+    } catch (error) {
+      console.error('加载收藏数据失败:', error);
+    } finally {
+      setLoading(false);
+    }
+  }, [searchTerm, filters, sortBy, sortOrder, getUserId]);视图）
  * 2. 🔍 搜索和过滤功能
  * 3. ➕ 添加/删除游戏
  * 4. ✏️ 编辑游戏信息
@@ -11,6 +31,7 @@
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 import { 
   getGameCollection, 
   addGameToCollection, 
@@ -24,6 +45,12 @@ import '../assets/styles/components/GameCollection.css';
 
 const GameCollection = () => {
   const navigate = useNavigate();
+  const { user } = useAuth(); // 获取当前用户信息
+  
+  // 获取用户ID（用于收藏隔离）
+  const getUserId = useCallback(() => {
+    return user?.username || null;
+  }, [user?.username]);
   
   // ========================= 状态管理 =========================
   const [collection, setCollection] = useState([]);
@@ -91,7 +118,8 @@ const GameCollection = () => {
       return;
     }
 
-    if (isGameInCollectionByName(newGame.name)) {
+    const userId = getUserId();
+    if (isGameInCollectionByName(newGame.name, userId)) {
       alert('该游戏已在收藏列表中');
       return;
     }
@@ -102,7 +130,7 @@ const GameCollection = () => {
       genres: typeof newGame.genres === 'string' ? 
         newGame.genres.split(',').map(g => g.trim()).filter(g => g) : 
         newGame.genres
-    });
+    }, userId);
 
     if (result.success) {
       setNewGame({
@@ -124,7 +152,8 @@ const GameCollection = () => {
 
   const handleRemoveGame = useCallback((gameId, gameName) => {
     if (confirm(`确定要从收藏列表中移除"${gameName}"吗？`)) {
-      const result = removeGameFromCollection(gameId);
+      const userId = getUserId();
+      const result = removeGameFromCollection(gameId, userId);
       if (result.success) {
         loadCollectionData();
         alert('游戏已从收藏列表移除');
@@ -132,10 +161,11 @@ const GameCollection = () => {
         alert(result.message || '移除失败，请重试');
       }
     }
-  }, [loadCollectionData]);
+  }, [loadCollectionData, getUserId]);
 
   const handleUpdateGame = useCallback((gameId, updates) => {
-    const result = updateGameInCollection(gameId, updates);
+    const userId = getUserId();
+    const result = updateGameInCollection(gameId, updates, userId);
     if (result.success) {
       loadCollectionData();
       setEditingGame(null);
@@ -143,11 +173,12 @@ const GameCollection = () => {
     } else {
       alert(result.message || '更新失败，请重试');
     }
-  }, [loadCollectionData]);
+  }, [loadCollectionData, getUserId]);
 
   const handleExport = useCallback((format) => {
     try {
-      const data = exportGameCollection(format);
+      const userId = getUserId();
+      const data = exportGameCollection(format, userId);
       const blob = new Blob([data], { 
         type: format === 'json' ? 'application/json' : 'text/csv' 
       });

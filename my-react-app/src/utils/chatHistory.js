@@ -26,13 +26,29 @@ export class ChatHistoryManager {
    * 聊天历史管理器构造函数
    * 
    * 初始化配置和存储参数：
-   * - 本地存储键名
+   * - 基于用户ID的独立存储键名
    * - 最大保存数量限制
    * - 数据格式版本控制
+   * 
+   * @param {string|null} userId - 用户ID，用于创建独立的聊天记录存储
    */
-  constructor() {
-    this.storageKey = 'chat_histories';    // localStorage存储键名
+  constructor(userId = null) {
+    this.userId = userId;
+    // 基于用户ID创建独立的存储键，未登录用户使用默认键
+    this.storageKey = userId ? `chat_histories_${userId}` : 'chat_histories_guest';
     this.maxHistories = 50;                // 最多保存50个历史会话，防止存储空间过大
+  }
+
+  /**
+   * 更新用户ID并重新设置存储键
+   * 
+   * 用于用户登录/退出时切换聊天记录存储
+   * 
+   * @param {string|null} userId - 新的用户ID
+   */
+  setUserId(userId) {
+    this.userId = userId;
+    this.storageKey = userId ? `chat_histories_${userId}` : 'chat_histories_guest';
   }
 
   /**
@@ -279,18 +295,58 @@ export class ChatHistoryManager {
   }
 }
 
-// 创建全局实例
-export const chatHistoryManager = new ChatHistoryManager();
+// ========================= 全局实例管理 =========================
 
-// 便捷函数
-export const saveChatHistory = (messages, functionType, title) => 
-  chatHistoryManager.saveChat(messages, functionType, title);
+// 存储当前用户的聊天记录管理器实例
+let currentChatHistoryManager = null;
+let currentUserId = null;
 
-export const loadChatHistory = (chatId) => 
-  chatHistoryManager.getChatById(chatId);
+/**
+ * 获取或创建聊天记录管理器实例
+ * 
+ * @param {string|null} userId - 用户ID
+ * @returns {ChatHistoryManager} 聊天记录管理器实例
+ */
+export const getChatHistoryManager = (userId = null) => {
+  // 如果用户ID发生变化，或者还没有实例，就创建新的
+  if (!currentChatHistoryManager || currentUserId !== userId) {
+    currentChatHistoryManager = new ChatHistoryManager(userId);
+    currentUserId = userId;
+    console.log(`🔄 切换聊天记录管理器 - 用户: ${userId || '游客'}`);
+  }
+  return currentChatHistoryManager;
+};
 
-export const getAllChatHistories = () => 
-  chatHistoryManager.getAllHistories();
+/**
+ * 清理当前聊天记录管理器（用户切换时调用）
+ */
+export const clearChatHistoryManager = () => {
+  currentChatHistoryManager = null;
+  currentUserId = null;
+  console.log('🧹 已清理聊天记录管理器');
+};
 
-export const deleteChatHistory = (chatId) => 
-  chatHistoryManager.deleteChat(chatId);
+// 为了向后兼容，保留全局实例（游客模式）
+export const chatHistoryManager = getChatHistoryManager();
+
+// ========================= 便捷函数 =========================
+
+export const saveChatHistory = (messages, functionType, title, userId = null) => {
+  const manager = getChatHistoryManager(userId);
+  return manager.saveChat(messages, functionType, title);
+};
+
+export const loadChatHistory = (chatId, userId = null) => {
+  const manager = getChatHistoryManager(userId);
+  return manager.getChatById(chatId);
+};
+
+export const getAllChatHistories = (userId = null) => {
+  const manager = getChatHistoryManager(userId);
+  return manager.getAllHistories();
+};
+
+export const deleteChatHistory = (chatId, userId = null) => {
+  const manager = getChatHistoryManager(userId);
+  return manager.deleteChat(chatId);
+};

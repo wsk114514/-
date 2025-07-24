@@ -148,19 +148,21 @@ class QuestionGenerator {
 
   /**
    * 更新收藏数据
+   * @param {string|null} userId - 用户ID
    */
-  updateCollection() {
-    this.collection = getGameCollection();
-    this.stats = getCollectionStats();
+  updateCollection(userId = null) {
+    this.collection = getGameCollection(null, userId);
+    this.stats = getCollectionStats(userId);
   }
 
   /**
    * 生成智能问题推荐
    * @param {number} maxQuestions - 最大问题数量
+   * @param {string|null} userId - 用户ID
    * @returns {Array} 生成的问题列表
    */
-  generateQuestions(maxQuestions = 6) {
-    this.updateCollection();
+  generateQuestions(maxQuestions = 6, userId = null) {
+    this.updateCollection(userId);
     
     if (this.collection.length === 0) {
       return this.getDefaultQuestions();
@@ -448,8 +450,13 @@ class QuestionGenerator {
 const questionGenerator = new QuestionGenerator();
 
 // 导出便捷函数
-export const generateSmartQuestions = (maxQuestions = 6) => questionGenerator.generateQuestions(maxQuestions);
-export const updateQuestionCollection = () => questionGenerator.updateCollection();
+export const generateSmartQuestions = (maxQuestions = 6, userId = null) => {
+  return questionGenerator.generateQuestions(maxQuestions, userId);
+};
+
+export const updateQuestionCollection = (userId = null) => {
+  return questionGenerator.updateCollection(userId);
+};
 export const getQuestionStats = () => questionGenerator.stats;
 
 // 导出生成器类
