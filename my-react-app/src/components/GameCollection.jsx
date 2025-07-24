@@ -2,27 +2,7 @@
  * GameCollection.jsx - 游戏收藏列表组件
  * 
  * 提供完整的游戏收藏管理界面，包括：
-   // 加载收藏数据
-  const loadCollectionData = useCallback(() => {
-    try {
-      setLoading(true);
-      const userId = getUserId();
-      const collectionData = getGameCollection({
-        search: searchTerm,
-        filter: filters,
-        sortBy,
-        sortOrder
-      }, userId);
-      const statsData = getCollectionStats(userId);
-      
-      setCollection(collectionData);
-      setStats(statsData);
-    } catch (error) {
-      console.error('加载收藏数据失败:', error);
-    } finally {
-      setLoading(false);
-    }
-  }, [searchTerm, filters, sortBy, sortOrder, getUserId]);视图）
+ * 1. 📚 收藏列表展示（网格/列表视图）
  * 2. 🔍 搜索和过滤功能
  * 3. ➕ 添加/删除游戏
  * 4. ✏️ 编辑游戏信息
@@ -89,13 +69,14 @@ const GameCollection = () => {
   const loadCollectionData = useCallback(() => {
     try {
       setLoading(true);
+      const userId = getUserId();
       const collectionData = getGameCollection({
         search: searchTerm,
         filter: filters,
         sortBy,
         sortOrder
-      });
-      const statsData = getCollectionStats();
+      }, userId); // 传递用户ID
+      const statsData = getCollectionStats(userId); // 传递用户ID
       
       setCollection(collectionData);
       setStats(statsData);
@@ -104,7 +85,7 @@ const GameCollection = () => {
     } finally {
       setLoading(false);
     }
-  }, [searchTerm, filters, sortBy, sortOrder]);
+  }, [searchTerm, filters, sortBy, sortOrder, getUserId]);
 
   useEffect(() => {
     loadCollectionData();
@@ -148,7 +129,7 @@ const GameCollection = () => {
     } else {
       alert(result.message || '添加失败，请重试');
     }
-  }, [newGame, loadCollectionData]);
+  }, [newGame, loadCollectionData, getUserId]);
 
   const handleRemoveGame = useCallback((gameId, gameName) => {
     if (confirm(`确定要从收藏列表中移除"${gameName}"吗？`)) {
@@ -194,7 +175,7 @@ const GameCollection = () => {
       console.error('导出失败:', error);
       alert('导出失败，请重试');
     }
-  }, []);
+  }, [getUserId]);
 
   // ========================= 渲染辅助函数 =========================
   
@@ -316,8 +297,8 @@ const GameCollection = () => {
         <div className="header-left">
           <button 
             className="btn-back"
-            onClick={() => navigate('/welcome')}
-            title="返回主页"
+            onClick={() => navigate(-1)}
+            title="返回上一页"
           >
             ← 返回
           </button>

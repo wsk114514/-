@@ -54,8 +54,18 @@ class GameCollectionManager {
   constructor(userId = null) {
     this.userId = userId;
     this.storageKeys = getUserStorageKeys(userId);
+    
+    // 初始化收藏列表
     this.collection = this.loadCollection();
+    // 确保 collection 始终是数组
+    if (!Array.isArray(this.collection)) {
+      console.warn(`收藏列表初始化失败，当前类型: ${typeof this.collection}，已重置为空数组`);
+      this.collection = [];
+    }
+    
     this.settings = this.loadSettings();
+    
+    console.log(`🎮 游戏收藏管理器已初始化 - 用户: ${userId || '游客'}, 收藏数量: ${this.collection.length}`);
   }
 
   /**
@@ -66,9 +76,17 @@ class GameCollectionManager {
   setUserId(userId) {
     this.userId = userId;
     this.storageKeys = getUserStorageKeys(userId);
+    
+    // 重新加载收藏列表
     this.collection = this.loadCollection();
+    // 确保 collection 始终是数组
+    if (!Array.isArray(this.collection)) {
+      console.warn(`用户切换后收藏列表加载失败，当前类型: ${typeof this.collection}，已重置为空数组`);
+      this.collection = [];
+    }
+    
     this.settings = this.loadSettings();
-    console.log(`🔄 切换游戏收藏管理器 - 用户: ${userId || '游客'}`);
+    console.log(`🔄 切换游戏收藏管理器 - 用户: ${userId || '游客'}, 收藏数量: ${this.collection.length}`);
   }
 
   /**
@@ -77,7 +95,18 @@ class GameCollectionManager {
   loadCollection() {
     try {
       const stored = localStorage.getItem(this.storageKeys.GAME_COLLECTION);
-      return stored ? JSON.parse(stored) : [];
+      if (!stored) {
+        return [];
+      }
+      
+      const parsed = JSON.parse(stored);
+      // 确保返回的总是一个数组
+      if (!Array.isArray(parsed)) {
+        console.warn('本地存储的收藏数据不是数组格式，已重置为空数组');
+        return [];
+      }
+      
+      return parsed;
     } catch (error) {
       console.error('加载游戏收藏列表失败:', error);
       return [];
@@ -89,6 +118,12 @@ class GameCollectionManager {
    */
   saveCollection() {
     try {
+      // 确保只保存有效的数组数据
+      if (!Array.isArray(this.collection)) {
+        console.error('尝试保存非数组类型的收藏数据，已重置为空数组');
+        this.collection = [];
+      }
+      
       localStorage.setItem(this.storageKeys.GAME_COLLECTION, JSON.stringify(this.collection));
       return true;
     } catch (error) {
@@ -284,6 +319,9 @@ class GameCollectionManager {
    * @returns {boolean}
    */
   isGameCollected(gameId) {
+    if (!Array.isArray(this.collection)) {
+      this.collection = [];
+    }
     return this.collection.some(game => game.id === gameId);
   }
 
@@ -303,7 +341,20 @@ class GameCollectionManager {
    * @returns {Array} 游戏列表
    */
   getCollection(options = {}) {
-    let result = [...this.collection];
+    // 确保 collection 不为 null 或 undefined，并且是数组
+    if (!this.collection || !Array.isArray(this.collection)) {
+      this.collection = [];
+    }
+    
+    // 再次确保安全复制
+    let result;
+    try {
+      result = Array.isArray(this.collection) ? [...this.collection] : [];
+    } catch (error) {
+      console.error('复制收藏列表失败:', error);
+      this.collection = [];
+      result = [];
+    }
 
     // 应用过滤器
     if (options.filter) {
@@ -330,6 +381,7 @@ class GameCollectionManager {
    * @returns {Array} 过滤后的列表
    */
   applyFilters(games, filter) {
+    if (!Array.isArray(games)) return [];
     return games.filter(game => {
       // 按游玩状态过滤
       if (filter.playStatus && filter.playStatus !== 'all') {
@@ -362,6 +414,7 @@ class GameCollectionManager {
    * @returns {Array} 搜索结果
    */
   applySearch(games, searchTerm) {
+    if (!Array.isArray(games)) return [];
     const term = searchTerm.toLowerCase().trim();
     if (!term) return games;
 
@@ -382,6 +435,7 @@ class GameCollectionManager {
    * @returns {Array} 排序后的列表
    */
   applySorting(games, sortBy, sortOrder = 'desc') {
+    if (!Array.isArray(games)) return [];
     return games.sort((a, b) => {
       let aValue = a[sortBy];
       let bValue = b[sortBy];
@@ -424,6 +478,9 @@ class GameCollectionManager {
    * @returns {Object} 统计信息
    */
   getStats() {
+    if (!Array.isArray(this.collection)) {
+      this.collection = [];
+    }
     const total = this.collection.length;
     const byStatus = this.collection.reduce((acc, game) => {
       acc[game.playStatus] = (acc[game.playStatus] || 0) + 1;
@@ -525,13 +582,21 @@ let currentUserId = null;
  * @returns {GameCollectionManager} 游戏收藏管理器实例
  */
 export const getGameCollectionManager = (userId = null) => {
-  // 如果用户ID发生变化，或者还没有实例，就创建新的
-  if (!currentGameCollectionManager || currentUserId !== userId) {
+  try {
+    // 如果用户ID发生变化，或者还没有实例，就创建新的
+    if (!currentGameCollectionManager || currentUserId !== userId) {
+      currentGameCollectionManager = new GameCollectionManager(userId);
+      currentUserId = userId;
+      console.log(`🔄 切换游戏收藏管理器 - 用户: ${userId || '游客'}`);
+    }
+    return currentGameCollectionManager;
+  } catch (error) {
+    console.error('获取游戏收藏管理器失败:', error);
+    // 如果出错，创建一个基本的实例
     currentGameCollectionManager = new GameCollectionManager(userId);
     currentUserId = userId;
-    console.log(`🔄 切换游戏收藏管理器 - 用户: ${userId || '游客'}`);
+    return currentGameCollectionManager;
   }
-  return currentGameCollectionManager;
 };
 
 /**
@@ -573,9 +638,14 @@ export const isGameInCollectionByName = (gameName, userId = null) => {
   return manager.isGameCollectedByName(gameName);
 };
 
-export const getGameCollection = (options, userId = null) => {
-  const manager = getGameCollectionManager(userId);
-  return manager.getCollection(options);
+export const getGameCollection = (options = {}, userId = null) => {
+  try {
+    const manager = getGameCollectionManager(userId);
+    return manager.getCollection(options);
+  } catch (error) {
+    console.error('获取游戏收藏列表失败:', error);
+    return []; // 返回空数组作为兜底
+  }
 };
 
 export const getCollectionStats = (userId = null) => {

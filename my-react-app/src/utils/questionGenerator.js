@@ -151,7 +151,7 @@ class QuestionGenerator {
    * @param {string|null} userId - 用户ID
    */
   updateCollection(userId = null) {
-    this.collection = getGameCollection(null, userId);
+    this.collection = getGameCollection({}, userId); // 传递空对象作为options
     this.stats = getCollectionStats(userId);
   }
 
