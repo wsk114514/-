@@ -35,10 +35,10 @@ BASE_DIR = Path(__file__).resolve().parent
 UPLOAD_DIR = os.path.join(BASE_DIR, "uploads")
 
 # 模板文件目录（如果使用服务端渲染）
-TEMPLATES_DIR = os.path.join(BASE_DIR, "../my-react-app/templates")
+TEMPLATES_DIR = os.path.join(BASE_DIR, "templates")
 
 # 静态文件服务目录
-STATIC_DIR = os.path.join(BASE_DIR, "../my-react-app/static")
+STATIC_DIR = os.path.join(BASE_DIR, "static")
 
 # 确保关键目录存在
 os.makedirs(UPLOAD_DIR, exist_ok=True)
