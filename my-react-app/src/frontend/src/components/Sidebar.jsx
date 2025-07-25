@@ -22,7 +22,6 @@ const Sidebar = () => {
         currentFunctionType,
         getCurrentChat,
         loadHistoryChat,
-        isCurrentChatFromHistory,
         hasRealUserConversation
     } = useFunctionContext();
     const { user, logout } = useAuth();
@@ -136,7 +135,7 @@ const Sidebar = () => {
         }
     ], []);
 
-    // 处理菜单项点击（增加智能自动保存逻辑）
+    // 处理菜单项点击（移除自动保存机制）
     const handleMenuItemClick = useCallback(async (functionType, e) => {
         e.preventDefault();
         
@@ -147,23 +146,11 @@ const Sidebar = () => {
         }
 
         try {
-            console.log(`🔄 切换到功能: ${functionType}`);
+            console.log(`🔄 切换到功능: ${functionType}`);
             
-            // 只有在切换到不同的功能时才自动保存当前聊天
-            // 并且只有当前聊天不是从历史记录加载时才保存
-            // 并且只有当有真正的用户对话时才保存
-            if (currentFunctionType && currentFunctionType !== functionType) {
-                if (!isCurrentChatFromHistory && hasRealUserConversation()) {
-                    const currentChat = getCurrentChat();
-                    const userId = user?.username || null;
-                    saveChatHistory(currentChat.messages, currentChat.functionType, undefined, userId);
-                    console.log('切换功能时自动保存了当前聊天');
-                } else if (isCurrentChatFromHistory) {
-                    console.log('当前聊天是从历史记录加载的，跳过自动保存');
-                } else if (!hasRealUserConversation()) {
-                    console.log('没有真正的用户对话，跳过自动保存');
-                }
-            }
+            // 移除自动保存机制，只保留简单的功能切换逻辑
+            // 聊天历史只有在点击"开启新对话"时才会保存
+            console.log('切换功能时不再自动保存聊天历史');
             
             // 设置新的功能类型并导航
             setCurrentFunctionType(functionType);
@@ -173,7 +160,7 @@ const Sidebar = () => {
         } catch (error) {
             console.error('❌ 切换功能失败:', error);
         }
-    }, [VALID_FUNCTION_TYPES, setCurrentFunctionType, navigate, currentFunctionType, getCurrentChat, isCurrentChatFromHistory, hasRealUserConversation]);
+    }, [VALID_FUNCTION_TYPES, setCurrentFunctionType, navigate]);
 
     // 处理退出登录
     const handleLogout = useCallback(() => {

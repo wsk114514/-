@@ -2,7 +2,7 @@
 llm_chain.py - LangChain集成与AI对话链模块
 
 这是应用的AI对话核心，负责：
-1. 🤖 大语言模型集成 - 通义千问/DeepSeek模型的统一接口
+1. 🤖 大语言模型集成 - 通义千问模型的统一接口
 2. 🧠 多功能对话链 - 不同功能模式的专门化处理
 3. 💾 对话记忆管理 - 按用户和功能分类的记忆存储
 4. 📄 文档问答集成 - RAG检索增强生成功能
@@ -29,7 +29,7 @@ from langchain_core.output_parsers import StrOutputParser
 from langchain.memory import ConversationBufferMemory
 from langchain_community.chat_models import ChatTongyi
 from langchain_chroma import Chroma  
-from document_processing import CHROMA_PATH, init_embeddings, clear_vector_store, clear_all_document_data
+from document_processing import CHROMA_PATH, get_user_chroma_path, init_embeddings, clear_vector_store, clear_all_document_data, clear_user_document_data
 import logging
 from operator import itemgetter
 
@@ -157,10 +157,10 @@ def clear_memory_for_function(function_type, user_id="default"):
                 memory_by_user_and_function[user_id][function_type].clear()
                 logger.info(f"用户 {user_id} 的功能 {function_type} 记忆已清除")
     
-    # 如果是文档问答功能，同时清除文档数据（注意：这会影响所有用户）
+    # 如果是文档问答功能，同时清除文档数据
     if function_type == "doc_qa":
         try:
-            clear_all_document_data()
+            clear_user_document_data(user_id)
             logger.info(f"用户 {user_id} 的功能 {function_type} 的文档数据清除操作已完成")
         except Exception as e:
             logger.warning(f"清除用户 {user_id} 功能 {function_type} 的文档数据时出现问题: {e}")
@@ -201,11 +201,12 @@ def format_docs(docs):
     """格式化检索到的文档"""
     return "\n\n".join(doc.page_content for doc in docs)
 
-def init_doc_qa_system(llm):
-    """初始化文档问答系统 (LCEL版本)"""
+def init_doc_qa_system(llm, user_id: str = "default"):
+    """初始化用户专属的文档问答系统 (LCEL版本)"""
     global doc_qa_chain
-    if doc_qa_chain is not None:
-        return doc_qa_chain
+    
+    # 获取用户专属的ChromaDB路径
+    user_chroma_path = get_user_chroma_path(user_id)
     
     # LCEL提示词模板
     qa_template = """你是睿玩智库的文档检索助手形态，请根据提供的文档内容回答问题。如果文档内容不包含答案，请回答"根据文档内容，我无法回答这个问题"。
@@ -222,15 +223,14 @@ def init_doc_qa_system(llm):
     QA_PROMPT = ChatPromptTemplate.from_template(qa_template)
     
     try:
-        # 检查向量数据库是否存在
-        if not os.path.exists(CHROMA_PATH) or not os.listdir(CHROMA_PATH):
-            logger.warning("向量数据库不存在或为空，使用空文档问答链")
-            doc_qa_chain = EmptyDocQAChain()
-            return doc_qa_chain
+        # 检查用户的向量数据库是否存在
+        if not os.path.exists(user_chroma_path) or not os.listdir(user_chroma_path):
+            logger.warning(f"用户 {user_id} - 向量数据库不存在或为空，使用空文档问答链")
+            return EmptyDocQAChain()
         
         embeddings = init_embeddings()
         chroma_db = Chroma(
-            persist_directory=CHROMA_PATH,
+            persist_directory=user_chroma_path,
             embedding_function=embeddings
         )
         retriever = chroma_db.as_retriever(
@@ -239,7 +239,7 @@ def init_doc_qa_system(llm):
         )
         
         # LCEL链构建
-        doc_qa_chain = (
+        user_doc_qa_chain = (
             {
                 "context": itemgetter("question") | retriever | RunnableLambda(format_docs),
                 "chat_history": itemgetter("chat_history"),
@@ -250,12 +250,11 @@ def init_doc_qa_system(llm):
             | StrOutputParser()
         )
         
-        logger.info("文档问答系统(LCEL)初始化成功")
-        return doc_qa_chain
+        logger.info(f"用户 {user_id} - 文档问答系统(LCEL)初始化成功")
+        return user_doc_qa_chain
     except Exception as e:
-        logger.error(f"文档问答系统初始化失败: {str(e)}")
-        doc_qa_chain = EmptyDocQAChain()
-        return doc_qa_chain
+        logger.error(f"用户 {user_id} - 文档问答系统初始化失败: {str(e)}")
+        return EmptyDocQAChain()
 
 def init_system(function_type="general", user_id="default"):
     """初始化对话系统 (LCEL版本) - 不使用记忆系统"""
@@ -367,7 +366,7 @@ def get_response(message: str, system: dict, function: str, user_id: str = "defa
         
         # 文档问答功能
         if function == "doc_qa":
-            doc_qa_chain = init_doc_qa_system(system["llm"])
+            doc_qa_chain = init_doc_qa_system(system["llm"], user_id)
             try:
                 result = doc_qa_chain.invoke({
                     "question": message,
@@ -375,7 +374,7 @@ def get_response(message: str, system: dict, function: str, user_id: str = "defa
                 })
                 return result
             except Exception as e:  
-                logger.error(f"处理文档问答时出错: {str(e)}")
+                logger.error(f"用户 {user_id} - 处理文档问答时出错: {str(e)}")
                 return "处理文档时发生错误，请稍后再试"
         
         # 通用对话功能
@@ -453,7 +452,7 @@ async def get_response_stream(message: str, system: dict, function: str, user_id
         
         # 文档问答功能
         if function == "doc_qa":
-            doc_qa_chain = init_doc_qa_system(system["llm"])
+            doc_qa_chain = init_doc_qa_system(system["llm"], user_id)
             try:
                 # 使用 astream 进行流式处理
                 full_response = ""
@@ -466,7 +465,7 @@ async def get_response_stream(message: str, system: dict, function: str, user_id
                         yield chunk
                 
             except Exception as e:
-                logger.error(f"处理文档问答时出错: {str(e)}")
+                logger.error(f"用户 {user_id} - 处理文档问答时出错: {str(e)}")
                 yield "处理文档时发生错误，请稍后再试"
         else:
             # 通用对话功能 - 创建临时链使用前端传入的历史记录

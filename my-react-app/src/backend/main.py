@@ -21,7 +21,7 @@ import os
 import logging
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI, Depends, UploadFile, File
+from fastapi import FastAPI, Depends, UploadFile, File, Header
 from fastapi.responses import JSONResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
@@ -38,7 +38,7 @@ from auth import auth_manager
 from llm_chain import init_system, get_response, get_response_stream, clear_memory
 from document_processing import (
     process_uploaded_file, split_documents, 
-    init_vector_store, clear_vector_store, clear_all_document_data, generate_document_summary
+    init_vector_store, clear_vector_store, clear_all_document_data, clear_user_document_data, generate_document_summary
 )
 from config import UPLOAD_DIR, ALLOWED_EXTENSIONS
 from pathlib import Path
@@ -53,6 +53,16 @@ logging.basicConfig(
     ]
 )
 logger = logging.getLogger(__name__)
+
+
+# ========================= 认证相关函数 =========================
+
+def get_current_user_simple(x_user_id: str = Header(default="default", alias="X-User-ID")):
+    """
+    简单的用户信息获取函数
+    从请求头获取用户ID
+    """
+    return {"user_id": x_user_id}
 
 
 class ApplicationState:
@@ -497,57 +507,58 @@ async def test_upload_config():
 # === 文档处理端点 ===
 
 @app.post("/upload", response_model=UploadResponse)
-async def upload_document(file: UploadFile = File(...)):
+async def upload_document(file: UploadFile = File(...), user_info: dict = Depends(get_current_user_simple)):
     """文档上传端点"""
     try:
-        logger.info(f"收到文件上传请求: {file.filename}")
+        logger.info(f"用户 {user_info['user_id']} - 收到文件上传请求: {file.filename}")
         
         # 验证文件类型
         file_extension = os.path.splitext(file.filename)[1].lower()
-        logger.info(f"文件扩展名: {file_extension}")
+        logger.info(f"用户 {user_info['user_id']} - 文件扩展名: {file_extension}")
         
         if file_extension not in ALLOWED_EXTENSIONS:
-            logger.warning(f"不支持的文件类型: {file_extension}")
+            logger.warning(f"用户 {user_info['user_id']} - 不支持的文件类型: {file_extension}")
             return JSONResponse(
                 status_code=400,
                 content={"error": f"不支持的文件类型。支持的类型: {', '.join(ALLOWED_EXTENSIONS)}"}
             )
         
-        # 确保上传目录存在
-        os.makedirs(UPLOAD_DIR, exist_ok=True)
-        logger.info(f"上传目录: {UPLOAD_DIR}")
+        # 创建用户专属的上传目录
+        user_upload_dir = os.path.join(UPLOAD_DIR, f"user_{user_info['user_id']}")
+        os.makedirs(user_upload_dir, exist_ok=True)
+        logger.info(f"用户 {user_info['user_id']} - 上传目录: {user_upload_dir}")
         
-        # 保存文件
-        file_path = os.path.join(UPLOAD_DIR, file.filename)
-        logger.info(f"准备保存文件到: {file_path}")
+        # 保存文件到用户专属目录
+        file_path = os.path.join(user_upload_dir, file.filename)
+        logger.info(f"用户 {user_info['user_id']} - 准备保存文件到: {file_path}")
         
         with open(file_path, "wb") as f:
             content = await file.read()
             f.write(content)
-            logger.info(f"文件保存成功: {file_path}, 大小: {len(content)} 字节")
+            logger.info(f"用户 {user_info['user_id']} - 文件保存成功: {file_path}, 大小: {len(content)} 字节")
         
         # 处理文档
         try:
-            logger.info("开始处理文档...")
+            logger.info(f"用户 {user_info['user_id']} - 开始处理文档...")
             
-            # 清除现有向量存储
-            clear_vector_store()
-            logger.info("向量存储已清除")
+            # 清除该用户现有的向量存储
+            clear_user_document_data(str(user_info['user_id']))
+            logger.info(f"用户 {user_info['user_id']} - 向量存储已清除")
             
             # 处理上传的文档
             documents = process_uploaded_file(file_path)
-            logger.info(f"文档处理完成: {len(documents)} 个文档")
+            logger.info(f"用户 {user_info['user_id']} - 文档处理完成: {len(documents)} 个文档")
             
             split_docs = split_documents(documents)
-            logger.info(f"文档分割完成: {len(split_docs)} 个块")
+            logger.info(f"用户 {user_info['user_id']} - 文档分割完成: {len(split_docs)} 个块")
             
-            # 初始化向量存储
-            init_vector_store(split_docs)
-            logger.info("向量存储初始化完成")
+            # 初始化用户专属的向量存储
+            init_vector_store(split_docs, str(user_info['user_id']))
+            logger.info(f"用户 {user_info['user_id']} - 向量存储初始化完成")
             
             # 获取文档摘要
             summary = generate_document_summary(split_docs)
-            logger.info(f"文档摘要生成完成")
+            logger.info(f"用户 {user_info['user_id']} - 文档摘要生成完成")
             
             return UploadResponse(
                 message="文件上传并处理成功",
@@ -558,18 +569,18 @@ async def upload_document(file: UploadFile = File(...)):
             )
             
         except Exception as e:
-            logger.error(f"文档处理失败: {str(e)}", exc_info=True)
+            logger.error(f"用户 {user_info['user_id']} - 文档处理失败: {str(e)}", exc_info=True)
             # 删除上传的文件
             if os.path.exists(file_path):
                 os.remove(file_path)
-                logger.info(f"已删除上传文件: {file_path}")
+                logger.info(f"用户 {user_info['user_id']} - 已删除上传文件: {file_path}")
             return JSONResponse(
                 status_code=500,
                 content={"error": f"文档处理失败: {str(e)}"}
             )
         
     except Exception as e:
-        logger.error(f"文件上传失败: {str(e)}", exc_info=True)
+        logger.error(f"用户 {user_info['user_id']} - 文件上传失败: {str(e)}", exc_info=True)
         return JSONResponse(
             status_code=500,
             content={"error": f"文件上传失败: {str(e)}"}
