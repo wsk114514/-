@@ -205,8 +205,14 @@ const InputBar = () => {
       const formData = new FormData();
       formData.append('file', file);
       
+      // 获取用户ID用于请求头
+      const userId = getCurrentUserId();
+      
       const response = await fetch('/upload', {
         method: 'POST',
+        headers: {
+          'X-User-ID': userId
+        },
         body: formData,
       });
       

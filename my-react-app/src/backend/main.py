@@ -38,7 +38,7 @@ from auth import auth_manager
 from llm_chain import init_system, get_response, get_response_stream, clear_memory
 from document_processing import (
     process_uploaded_file, split_documents, 
-    init_vector_store, clear_vector_store, clear_all_document_data, clear_user_document_data, generate_document_summary
+    init_vector_store, clear_vector_store, clear_all_document_data, clear_user_document_data, clear_user_vector_store, generate_document_summary
 )
 from config import UPLOAD_DIR, ALLOWED_EXTENSIONS
 from pathlib import Path
@@ -535,14 +535,37 @@ async def upload_document(file: UploadFile = File(...), user_info: dict = Depend
         with open(file_path, "wb") as f:
             content = await file.read()
             f.write(content)
-            logger.info(f"用户 {user_info['user_id']} - 文件已保存: {file_path}")
+        
+        logger.info(f"用户 {user_info['user_id']} - 文件已保存: {file_path}")
+        
+        # 验证文件是否真的存在并且可以访问
+        if not os.path.exists(file_path):
+            logger.error(f"用户 {user_info['user_id']} - 文件保存后不存在: {file_path}")
+            return JSONResponse(
+                status_code=500,
+                content={"error": "文件保存失败，请重试"}
+            )
+        
+        # 获取文件大小进行验证
+        file_size = os.path.getsize(file_path)
+        logger.info(f"用户 {user_info['user_id']} - 文件大小: {file_size} bytes")
+        
+        if file_size == 0:
+            logger.error(f"用户 {user_info['user_id']} - 保存的文件为空: {file_path}")
+            return JSONResponse(
+                status_code=500,
+                content={"error": "文件内容为空，请检查文件"}
+            )
         
         # 处理文档并构建向量存储
         try:
             logger.info(f"用户 {user_info['user_id']} - 开始处理文档并构建向量库...")
+            logger.info(f"用户 {user_info['user_id']} - 处理文件路径: {file_path}")
+            logger.info(f"用户 {user_info['user_id']} - 文件名: {file.filename}")
+            logger.info(f"用户 {user_info['user_id']} - 文件扩展名: {file_extension}")
             
-            # 清除该用户旧的向量数据
-            clear_user_document_data(str(user_info['user_id']))
+            # 只清除该用户旧的向量数据，不清除上传文件
+            clear_user_vector_store(str(user_info['user_id']))
             
             # 解析、分割并存储文档
             documents = process_uploaded_file(file_path)

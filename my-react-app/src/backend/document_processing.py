@@ -97,6 +97,20 @@ def process_uploaded_file(file_path: str):
     Note:
         文本文件支持多种编码自动检测：utf-8, gbk, gb2312, utf-8-sig, latin-1
     """
+    
+    # 首先检查文件是否存在
+    if not os.path.exists(file_path):
+        logger.error(f"文件不存在: {file_path}")
+        raise FileNotFoundError(f"文件不存在: {file_path}")
+    
+    # 检查文件是否为空
+    if os.path.getsize(file_path) == 0:
+        logger.error(f"文件为空: {file_path}")
+        raise ValueError(f"文件为空: {file_path}")
+    
+    logger.info(f"开始处理文件: {file_path}")
+    logger.info(f"文件大小: {os.path.getsize(file_path)} bytes")
+    
     try:
         if file_path.endswith('.txt'):
             # 尝试多种编码方式加载文本文件
