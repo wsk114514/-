@@ -70,7 +70,7 @@ def init_llm():
             raise ValueError("DASHSCOPE_API_KEY 环境变量未设置")
         
         # 初始化通义千问模型，设置创造性参数
-        llm = ChatTongyi(name="qwen-plus", api_key=API_KEY, temperature=0.8, top_p=0.9)
+        llm = ChatTongyi(name="qwen-plus-latest", api_key=API_KEY, temperature=0.8, top_p=0.9)
         logger.info("成功初始化大语言模型")
         return llm
     except Exception as e:
