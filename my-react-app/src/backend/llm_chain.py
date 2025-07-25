@@ -166,7 +166,15 @@ def clear_memory_for_function(function_type, user_id="default"):
             logger.warning(f"清除用户 {user_id} 功能 {function_type} 的文档数据时出现问题: {e}")
 
 def clear_all_user_memories(user_id):
-    """清除指定用户的所有记忆"""
+    """
+    清除指定用户的所有功能模块的对话记忆。
+
+    当用户希望重置所有对话历史，或者在用户注销时，此函数非常有用。
+    它会遍历该用户的所有功能记忆并清空，然后从全局记忆存储中移除该用户条目。
+
+    Args:
+        user_id (str): 需要清除所有记忆的用户ID。
+    """
     global memory_by_user_and_function
     
     if user_id in memory_by_user_and_function:
@@ -179,30 +187,95 @@ def clear_all_user_memories(user_id):
         logger.info(f"用户 {user_id} 的所有记忆已清除")
     
 def get_active_users_count():
-    """获取当前活跃用户数量"""
+    """
+    获取当前拥有活跃记忆会话的用户数量。
+
+    "活跃"定义为在全局记忆存储 `memory_by_user_and_function` 中存在条目的用户。
+    这可以用于监控应用的并发使用情况。
+
+    Returns:
+        int: 当前活跃用户的数量。
+    """
     return len(memory_by_user_and_function)
     
 class EmptyDocQAChain:
-    """空文档问答链（当没有文档时使用）"""
+    """
+    一个占位符链，当用户没有上传文档或文档处理失败时使用。
+    
+    这个类模仿了LangChain的Runnable接口，提供了同步和异步的调用方法，
+    但总是返回一个固定的、提示用户上传文档的消息。
+    这样可以确保即使RAG系统未就绪，程序也能优雅地响应。
+    """
     def __call__(self, *args, **kwargs):
-        return {"answer": "不清楚文档内容，请上传文档内容后重试。"}
+        """使类的实例可以像函数一样被调用，兼容旧版调用方式。"""
+        return self.invoke(None)
     
     def invoke(self, input_data, *args, **kwargs):
+        """
+        同步调用方法，返回固定的提示信息。
+        
+        Args:
+            input_data: 输入数据（在此实现中被忽略）。
+        
+        Returns:
+            dict: 包含固定答案的字典。
+        """
         return {"answer": "不清楚文档内容，请上传文档内容后重试。"}
     
     async def astream(self, input_data, *args, **kwargs):
-        """异步流式处理方法"""
+        """
+        异步流式处理方法，逐字生成固定的提示信息。
+        
+        这模拟了真实LLM的流式输出行为，为前端提供了一致的体验。
+        
+        Args:
+            input_data: 输入数据（在此实现中被忽略）。
+        
+        Yields:
+            str: 单个字符的流式响应。
+        """
         message = "不清楚文档内容，请上传文档内容后重试。"
         # 逐字符返回，模拟流式输出
         for char in message:
             yield char
 
 def format_docs(docs):
-    """格式化检索到的文档"""
+    """
+    将从向量数据库检索到的文档列表格式化为单个字符串。
+    
+    每个文档的内容由两个换行符分隔，这是将上下文注入提示词的常用方法。
+    
+    Args:
+        docs (list): LangChain的Document对象列表。
+        
+    Returns:
+        str: 拼接好的、包含所有文档内容的字符串。
+    """
     return "\n\n".join(doc.page_content for doc in docs)
 
 def init_doc_qa_system(llm, user_id: str = "default"):
-    """初始化用户专属的文档问答系统 (LCEL版本)"""
+    """
+    为指定用户初始化文档问答（RAG）系统。
+
+    此函数构建一个基于LCEL（LangChain Expression Language）的链，该链能够：
+    1. 接收一个问题。
+    2. 使用该问题从用户专属的ChromaDB向量存储中检索相关文档。
+    3. 将检索到的文档格式化为上下文。
+    4. 将上下文、问题和对话历史注入到一个结构化的提示词中。
+    5. 将填充好的提示词发送给LLM。
+    6. 解析并返回LLM的最终答案。
+
+    如果用户的向量数据库不存在或为空，它将返回一个 `EmptyDocQAChain` 实例，
+    该实例会返回一条友好的提示信息，而不是尝试执行问答。
+
+    Args:
+        llm: 已初始化的LangChain LLM实例。
+        user_id (str, optional): 目标用户的ID。默认为 "default"。
+
+    Returns:
+        Runnable: 一个可执行的LCEL链，用于文档问答。
+                  或者是 `EmptyDocQAChain` 的一个实例。
+    """
     global doc_qa_chain
     
     # 获取用户专属的ChromaDB路径
@@ -257,7 +330,28 @@ def init_doc_qa_system(llm, user_id: str = "default"):
         return EmptyDocQAChain()
 
 def init_system(function_type="general", user_id="default"):
-    """初始化对话系统 (LCEL版本) - 不使用记忆系统"""
+    """
+    根据功能类型初始化对话系统。
+
+    这个函数是对话系统的主要入口点。它负责：
+    1. 初始化大语言模型（LLM）。
+    2. 根据 `function_type` 选择相应的角色描述（prompt）。
+    3. 返回一个包含LLM实例和角色描述的配置字典。
+
+    注意：此版本的 `init_system` 不再管理记忆（`memory`），因为对话历史
+    现在由前端直接通过 `chat_history` 参数在每次请求中传递。
+    这使得后端变得无状态，更易于扩展和管理。
+
+    Args:
+        function_type (str, optional): 对话的功能类型。默认为 "general"。
+        user_id (str, optional): 用户ID，主要用于日志记录和未来可能的扩展。默认为 "default"。
+
+    Returns:
+        dict: 一个包含 "llm", "role_descriptions", 和 "function_type" 的字典。
+    
+    Raises:
+        Exception: 如果LLM初始化失败。
+    """
     try:
         llm = init_llm()
         # 注意：不再使用记忆系统，记忆由前端chat_history传递
@@ -303,7 +397,20 @@ def init_system(function_type="general", user_id="default"):
         raise
 
 def clear_memory(system, function_type=None, user_id=None):
-    """清除对话记忆"""
+    """
+    清除对话记忆和相关的文档数据。
+
+    此函数提供了多种清除模式：
+    - 清除特定用户和功能的记忆。
+    - 清除特定用户的所有记忆。
+    - 清除特定功能在默认用户下的记忆（用于向后兼容）。
+    - 清除当前系统的记忆（用于向后兼容）。
+
+    Args:
+        system (dict): 当前的系统配置，包含记忆对象。
+        function_type (str, optional): 要清除记忆的功能类型。
+        user_id (str, optional): 目标用户的ID。
+    """
     global doc_qa_chain
     try:
         if function_type and user_id:
@@ -336,14 +443,31 @@ def clear_memory(system, function_type=None, user_id=None):
 
 def get_response(message: str, system: dict, function: str, user_id: str = "default", chat_history: list = None) -> str:
     """
-    获取LLM响应 (LCEL版本)
-    
+    获取LLM响应 (LCEL版本) - 同步非流式版本。
+
+    此函数是处理用户请求并返回单个、完整响应的核心逻辑。
+    它根据功能类型（`function`）动态地选择和执行适当的LCEL链。
+
+    主要流程：
+    1.  接收用户消息、系统配置、功能类型、用户ID和对话历史。
+    2.  将前端传入的 `chat_history` (JSON列表) 格式化为LLM可读的纯文本。
+    3.  如果功能是 'doc_qa'，则初始化并调用文档问答链。
+    4.  对于其他功能，构建一个通用的对话链，注入相应的角色描述和格式化后的历史记录。
+    5.  同步调用（`.invoke()`）选择的链并获取完整的响应。
+    6.  返回处理后的字符串结果。
+
     Args:
-        message: 用户输入消息
-        system: 系统配置字典
-        function: 功能类型
-        user_id: 用户ID
-        chat_history: 对话历史 [{"role": "user/assistant", "content": "..."}]
+        message (str): 用户的输入消息。
+        system (dict): 包含LLM实例和配置的系统字典。
+        function (str): 当前的功能类型 (e.g., 'doc_qa', 'general')。
+        user_id (str, optional): 用户的唯一标识符。默认为 "default"。
+        chat_history (list, optional): 对话历史列表，格式为 [{"role": "user/assistant", "content": "..."}]。
+    
+    Returns:
+        str: 模型生成的完整回复文本。
+    
+    Raises:
+        Exception: 如果在处理过程中发生任何错误，会记录日志并返回友好的错误消息。
     """
     try:
         # 使用传入的chat_history，如果没有则使用空列表
@@ -437,7 +561,34 @@ def get_response(message: str, system: dict, function: str, user_id: str = "defa
         return "系统处理请求时出错，请稍后再试"
 
 async def get_response_stream(message: str, system: dict, function: str, user_id: str = "default", chat_history: list = None):
-    """获取LLM流式响应"""
+    """
+    以流式方式获取LLM的响应 (LCEL版本) - 异步流式版本。
+
+    此函数是处理用户请求并以数据流形式实时返回响应的核心逻辑。
+    它与 `get_response` 类似，但使用异步方法（`.astream()`）来逐块生成响应。
+
+    主要流程：
+    1.  与 `get_response` 同样地准备输入和历史记录。
+    2.  如果功能是 'doc_qa'，初始化文档问答链并异步迭代其流式输出（`.astream()`）。
+    3.  对于其他功能，构建通用的对话链。
+    4.  异步迭代通用对话链的流式输出。
+    5.  通过 `yield` 将每个响应块（chunk）返回给调用方（如FastAPI的 `StreamingResponse`）。
+
+    这对于实现打字机效果的前端体验至关重要，可以显著提升应用的感知性能。
+
+    Args:
+        message (str): 用户的输入消息。
+        system (dict): 包含LLM实例和配置的系统字典。
+        function (str): 当前的功能类型 (e.g., 'doc_qa', 'general')。
+        user_id (str, optional): 用户的唯一标识符。
+        chat_history (list, optional): 对话历史列表。
+
+    Yields:
+        str: 模型生成的响应文本块。
+    
+    Raises:
+        Exception: 如果在流式处理过程中发生任何错误，会记录日志并 `yield` 一条友好的错误消息。
+    """
     try:
         # 使用传入的chat_history，如果没有则使用空列表
         if chat_history is None:

@@ -10,15 +10,15 @@
  * 6. ⚠️ 错误边界保护 - 全局错误捕获和处理
  * 
  * 架构特点：
- * - 洋葱式Provider结构：从外到内依次包装Context
- * - 声明式路由：使用React Router v6的组件式路由
- * - 权限保护：通过ProtectedRoute组件保护私有页面
- * - 错误恢复：ErrorBoundary确保应用的健壮性
+ * - 洋葱式Provider结构：从外到内依次包装Context，确保依赖关系正确。
+ * - 声明式路由：使用React Router v6的组件式路由，清晰易懂。
+ * - 权限保护：通过自定义的 `ProtectedRoute` 组件保护私有页面。
+ * - 错误恢复：`ErrorBoundary` 组件确保应用的健壮性，防止因局部错误导致整个应用崩溃。
  * 
  * 路由设计：
- * - 公共路由：/, /login, /register
- * - 保护路由：/welcome, /chat, /:functionType
- * - 动态路由：/:functionType 支持功能类型直接访问
+ * - 公共路由：/, /login, /register - 无需登录即可访问。
+ * - 保护路由：/welcome, /chat, /collection, /:functionType - 需要用户认证才能访问。
+ * - 动态路由：`/:functionType` 支持通过URL直接访问特定功能，如 /play, /doc_qa 等。
  */
 
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
@@ -36,17 +36,21 @@ import ProtectedRoute from './components/ProtectedRoute';
 import './assets/styles/main.css';
 
 /**
- * App 主应用组件
+ * App 主应用组件。
+ * 
+ * 该组件是应用的根节点，通过嵌套 Context Provider 和 React Router，
+ * 构建了整个应用的结构、状态管理和路由系统。
  * 
  * 组件层次结构（从外到内）：
- * 1. ErrorBoundary - 全局错误捕获
- * 2. ThemeProvider - 主题状态管理
- * 3. Router - 路由管理
- * 4. AuthProvider - 用户认证状态
- * 5. FunctionProvider - 功能状态管理
- * 6. Routes - 路由配置
+
+ * 1. `ErrorBoundary` - 全局错误捕获，提供备用UI。
+ * 2. `ThemeProvider` - 全局主题状态管理（如深色/浅色模式）。
+ * 3. `Router` - 启用客户端路由。
+ * 4. `AuthProvider` - 管理用户认证状态和会话信息。
+ * 5. `FunctionProvider` - 管理当前激活的功能模块和相关状态。
+ * 6. `Routes` - 定义应用的路由规则和页面组件映射。
  * 
- * @returns {JSX.Element} 应用根组件
+ * @returns {JSX.Element} 渲染整个应用程序的根组件。
  */
 function App() {
   return (

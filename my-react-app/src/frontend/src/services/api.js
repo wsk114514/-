@@ -37,18 +37,15 @@ const HTTP_STATUS = {
 // ========================= 自定义错误类 =========================
 
 /**
- * 自定义API错误类
- * 
- * 功能说明：
- * - 扩展了原生Error，添加了状态码和附加数据
- * - 便于错误处理和用户友好的错误信息展示
- * - 支持错误分类和特定处理逻辑
+ * 自定义API错误类。
+ * 扩展了原生Error，添加了HTTP状态码和附加数据，便于进行更精细的错误处理。
  */
 class APIError extends Error {
   /**
-   * @param {string} message - 错误消息
-   * @param {number} status - HTTP状态码
-   * @param {any} data - 附加错误数据
+   * 创建一个 APIError 实例。
+   * @param {string} message - 错误消息。
+   * @param {number} status - HTTP状态码。
+   * @param {any} [data] - 附加的错误数据。
    */
   constructor(message, status, data) {
     super(message);
@@ -61,19 +58,14 @@ class APIError extends Error {
 // ========================= 网络请求工具函数 =========================
 
 /**
- * 带超时控制的 fetch 封装器
+ * 带有超时控制的 fetch 封装器。
+ * 如果请求在指定时间内未完成，将通过 AbortController 中断请求。
  * 
- * 功能说明：
- * - 提供统一的请求超时机制，防止请求无限等待
- * - 支持请求取消功能
- * - 自动处理相对路径和绝对路径
- * - 统一的错误处理机制
- * 
- * @param {string} url - 请求URL
- * @param {RequestInit} options - fetch选项
- * @param {number} timeout - 超时时间(毫秒)
- * @returns {Promise<Response>} fetch响应对象
- * @throws {APIError} 请求超时或网络错误
+ * @param {string} url - 请求的URL。
+ * @param {RequestInit} [options={}] - fetch 请求的配置选项。
+ * @param {number} [timeout=API_CONFIG.TIMEOUT] - 超时时间（毫秒）。
+ * @returns {Promise<Response>} 返回一个解析为 Response 对象的 Promise。
+ * @throws {APIError} 如果请求超时或发生网络错误，则抛出此错误。
  */
 async function fetchWithTimeout(url, options = {}, timeout = API_CONFIG.TIMEOUT) {
   // 创建 AbortController 用于取消请求
@@ -105,19 +97,14 @@ async function fetchWithTimeout(url, options = {}, timeout = API_CONFIG.TIMEOUT)
 }
 
 /**
- * 带重试机制的 fetch 封装器
+ * 带有重试机制的 fetch 封装器。
+ * 当遇到服务器错误（5xx）时，会自动重试请求。客户端错误（4xx）不会重试。
  * 
- * 功能说明：
- * - 实现智能重试逻辑，区分客户端错误和服务器错误
- * - 对服务器错误(5xx)进行重试，对客户端错误(4xx)不重试
- * - 采用指数退避策略，避免频繁重试对服务器造成压力
- * - 提供统一的错误处理和响应格式化
- * 
- * @param {string} url - 请求URL
- * @param {RequestInit} options - fetch选项
- * @param {number} maxAttempts - 最大重试次数
- * @returns {Promise<Response>} 成功的响应对象
- * @throws {APIError} 请求失败或超过最大重试次数
+ * @param {string} url - 请求的URL。
+ * @param {RequestInit} [options={}] - fetch 请求的配置选项。
+ * @param {number} [maxAttempts=API_CONFIG.RETRY_ATTEMPTS] - 最大重试次数。
+ * @returns {Promise<Response>} 返回一个解析为 Response 对象的 Promise。
+ * @throws {APIError} 如果所有重试尝试均失败，则抛出此错误。
  */
 async function fetchWithRetry(url, options = {}, maxAttempts = API_CONFIG.RETRY_ATTEMPTS) {
   let lastError;
@@ -168,18 +155,16 @@ async function fetchWithRetry(url, options = {}, maxAttempts = API_CONFIG.RETRY_
 // ========================= 对话API接口 =========================
 
 /**
- * 标准聊天 API（已废弃，但保留兼容性）
+ * 标准聊天 API（已废弃，但保留兼容性）。
+ * 发送单次请求并等待完整响应。
  * 
- * 功能说明：
- * - 发送消息到后端并获取AI回复
- * - 支持多种功能模式
- * - 保持向后兼容性
- * 
- * @deprecated 建议使用 getResponseStream 进行流式响应
- * @param {string} message - 用户消息
- * @param {string} function_type - 功能类型
- * @param {string} user_id - 用户ID
- * @returns {Promise<string>} AI回复内容
+ * @deprecated 建议使用 getResponseStream 以获得更好的用户体验。
+ * @param {string} message - 用户发送的消息。
+ * @param {string} function_type - 对话所属的功能类型。
+ * @param {string} [user_id='default'] - 用户的唯一标识符。
+ * @param {Array<Object>} [chat_history=[]] - 当前的聊天历史记录。
+ * @returns {Promise<string>} AI的回复内容。
+ * @throws {APIError} 如果请求失败，则抛出此错误。
  */
 export async function getResponse(message, function_type, user_id = 'default', chat_history = []) {
   try {
@@ -206,7 +191,19 @@ export async function getResponse(message, function_type, user_id = 'default', c
   }
 }
 
-// 流式响应 API
+/**
+ * 流式响应 API。
+ * 用于获取AI的流式回复，并通过回调函数实时处理数据块。
+ * 
+ * @param {string} message - 用户发送的消息。
+ * @param {string} function_type - 对话所属的功能类型。
+ * @param {function(string): void} onChunk - 处理每个数据块的回调函数。
+ * @param {AbortController|null} [abortController=null] - 用于中断请求的 AbortController。
+ * @param {string} [user_id='default'] - 用户的唯一标识符。
+ * @param {Array<Object>} [chat_history=[]] - 当前的聊天历史记录。
+ * @returns {Promise<void>} 当流结束时，Promise 完成。
+ * @throws {APIError} 如果请求失败或 onChunk 回调未提供，则抛出此错误。
+ */
 export async function getResponseStream(message, function_type, onChunk, abortController = null, user_id = 'default', chat_history = []) {
   if (!onChunk || typeof onChunk !== 'function') {
     throw new APIError('onChunk 回调函数是必需的', 0);
@@ -355,7 +352,12 @@ export async function getResponseStream(message, function_type, onChunk, abortCo
   }
 }
 
-// 清除记忆 API
+/**
+ * 清除后端记忆 API。
+ * @param {string} [functionType='current'] - 要清除记忆的功能类型。'current' 表示清除当前会话的上下文记忆。
+ * @returns {Promise<Object>} 后端返回的确认信息。
+ * @throws {APIError} 如果请求失败，则抛出此错误。
+ */
 export async function clearMemory(functionType = 'current') {
   try {
     let url = '/memory/clear';
@@ -386,17 +388,29 @@ export async function clearMemory(functionType = 'current') {
   }
 }
 
-// 清除当前功能记忆
+/**
+ * 便捷函数：清除当前功能的记忆。
+ * @returns {Promise<Object>} 后端返回的确认信息。
+ */
 export async function clearCurrentMemory() {
   return clearMemory('current');
 }
 
-// 清除指定功能记忆
+/**
+ * 便捷函数：清除指定功能的记忆。
+ * @param {string} functionType - 要清除记忆的功能类型。
+ * @returns {Promise<Object>} 后端返回的确认信息。
+ */
 export async function clearFunctionMemory(functionType) {
   return clearMemory(functionType);
 }
 
-// 用户认证 API
+/**
+ * 用户登录 API。
+ * @param {Object} credentials - 包含用户登录凭证（如用户名、密码）的对象。
+ * @returns {Promise<Object>} 后端返回的用户信息和token。
+ * @throws {APIError} 如果登录失败，则抛出此错误。
+ */
 export async function loginUser(credentials) {
   try {
     const response = await fetchWithRetry('/login', {
@@ -416,6 +430,12 @@ export async function loginUser(credentials) {
   }
 }
 
+/**
+ * 用户注册 API。
+ * @param {Object} userData - 包含用户注册信息的对象。
+ * @returns {Promise<Object>} 后端返回的注册结果。
+ * @throws {APIError} 如果注册失败，则抛出此错误。
+ */
 export async function registerUser(userData) {
   try {
     const response = await fetchWithRetry('/register', {
@@ -435,7 +455,12 @@ export async function registerUser(userData) {
   }
 }
 
-// 文件上传 API
+/**
+ * 文件上传 API。
+ * @param {File} file - 要上传的文件对象。
+ * @returns {Promise<Object>} 后端返回的上传结果。
+ * @throws {APIError} 如果上传失败，则抛出此错误。
+ */
 export async function uploadFile(file) {
   try {
     const formData = new FormData();

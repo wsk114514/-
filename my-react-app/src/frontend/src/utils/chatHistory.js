@@ -21,6 +21,10 @@
  * - 支持增量更新和批量操作
  */
 
+/**
+ * 管理用户聊天历史记录的类。
+ * 负责与 localStorage 交互，以持久化存储、检索和管理聊天会话。
+ */
 export class ChatHistoryManager {
   /**
    * 聊天历史管理器构造函数
@@ -30,7 +34,7 @@ export class ChatHistoryManager {
    * - 最大保存数量限制
    * - 数据格式版本控制
    * 
-   * @param {string|null} userId - 用户ID，用于创建独立的聊天记录存储
+   * @param {string|null} [userId=null] - 用户ID，用于创建独立的聊天记录存储。如果为null，则为游客模式。
    */
   constructor(userId = null) {
     this.userId = userId;
@@ -40,11 +44,10 @@ export class ChatHistoryManager {
   }
 
   /**
-   * 更新用户ID并重新设置存储键
+   * 更新用户ID并重新设置存储键。
+   * 用于用户登录/退出时切换聊天记录存储。
    * 
-   * 用于用户登录/退出时切换聊天记录存储
-   * 
-   * @param {string|null} userId - 新的用户ID
+   * @param {string|null} userId - 新的用户ID。
    */
   setUserId(userId) {
     this.userId = userId;
@@ -52,14 +55,14 @@ export class ChatHistoryManager {
   }
 
   /**
-   * 获取所有聊天历史
+   * 获取所有聊天历史。
    * 
    * 功能说明：
-   * - 从localStorage读取所有聊天历史记录
-   * - 自动处理JSON解析错误
-   * - 返回按时间倒序排列的历史列表
+   * - 从localStorage读取所有聊天历史记录。
+   * - 自动处理JSON解析错误。
+   * - 返回按时间倒序排列的历史列表。
    * 
-   * @returns {Array} 聊天历史记录数组，按创建时间倒序
+   * @returns {Array<Object>} 聊天历史记录数组，按创建时间倒序。
    */
   getAllHistories() {
     try {
@@ -72,18 +75,18 @@ export class ChatHistoryManager {
   }
 
   /**
-   * 保存聊天会话
+   * 保存聊天会话。
    * 
    * 功能说明：
-   * - 将当前对话保存为历史记录
-   * - 自动生成会话标题
-   * - 过滤临时消息（如加载状态）
-   * - 维护存储数量限制
+   * - 将当前对话保存为历史记录。
+   * - 自动生成会话标题。
+   * - 过滤临时消息（如加载状态）。
+   * - 维护存储数量限制。
    * 
-   * @param {Array} messages - 消息列表
-   * @param {string} functionType - 功能类型
-   * @param {string|null} title - 自定义标题，为空时自动生成
-   * @returns {string|null} 保存成功返回会话ID，失败返回null
+   * @param {Array<Object>} messages - 消息列表。
+   * @param {string} functionType - 功能类型。
+   * @param {string|null} [title=null] - 自定义标题，为空时自动生成。
+   * @returns {string|null} 保存成功返回会话ID，失败返回null。
    */
   saveChat(messages, functionType, title = null) {
     // 验证输入参数
@@ -124,17 +127,17 @@ export class ChatHistoryManager {
   }
 
   /**
-   * 更新现有聊天会话
+   * 更新现有聊天会话。
    * 
    * 功能说明：
-   * - 更新指定ID的聊天会话内容
-   * - 支持更新消息列表和标题
-   * - 自动更新时间戳
+   * - 更新指定ID的聊天会话内容。
+   * - 支持更新消息列表和标题。
+   * - 自动更新时间戳。
    * 
-   * @param {string} chatId - 要更新的会话ID
-   * @param {Array} messages - 新的消息列表
-   * @param {string|null} title - 新标题，为空则保持原标题
-   * @returns {boolean} 更新成功返回true，失败返回false
+   * @param {string} chatId - 要更新的会话ID。
+   * @param {Array<Object>} messages - 新的消息列表。
+   * @param {string|null} [title=null] - 新标题，为空则保持原标题。
+   * @returns {boolean} 更新成功返回true，失败返回false。
    */
   updateChat(chatId, messages, title = null) {
     const histories = this.getAllHistories();
@@ -160,13 +163,21 @@ export class ChatHistoryManager {
     return false;
   }
 
-  // 获取特定聊天记录
+  /**
+   * 通过ID获取单个聊天记录。
+   * @param {string} chatId - 要检索的会话ID。
+   * @returns {Object|null} 找到的会话对象，如果未找到则返回null。
+   */
   getChatById(chatId) {
     const histories = this.getAllHistories();
     return histories.find(h => h.id === chatId) || null;
   }
 
-  // 删除聊天记录
+  /**
+   * 通过ID删除一个聊天记录。
+   * @param {string} chatId - 要删除的会话ID。
+   * @returns {boolean} 删除成功返回true，失败返回false。
+   */
   deleteChat(chatId) {
     const histories = this.getAllHistories();
     const filteredHistories = histories.filter(h => h.id !== chatId);
@@ -180,7 +191,10 @@ export class ChatHistoryManager {
     }
   }
 
-  // 清空所有历史记录
+  /**
+   * 清空当前用户的所有历史记录。
+   * @returns {boolean} 清空成功返回true，失败返回false。
+   */
   clearAllHistories() {
     try {
       localStorage.removeItem(this.storageKey);
@@ -191,13 +205,21 @@ export class ChatHistoryManager {
     }
   }
 
-  // 根据功能类型获取历史记录
+  /**
+   * 根据功能类型筛选历史记录。
+   * @param {string} functionType - 要筛选的功能类型。
+   * @returns {Array<Object>} 匹配该功能类型的历史记录数组。
+   */
   getHistoriesByFunction(functionType) {
     const histories = this.getAllHistories();
     return histories.filter(h => h.functionType === functionType);
   }
 
-  // 搜索历史记录
+  /**
+   * 在所有历史记录的标题和消息内容中搜索关键字。
+   * @param {string} keyword - 要搜索的关键字。
+   * @returns {Array<Object>} 包含关键字的历史记录数组。
+   */
   searchHistories(keyword) {
     const histories = this.getAllHistories();
     const lowerKeyword = keyword.toLowerCase();
@@ -210,7 +232,12 @@ export class ChatHistoryManager {
     );
   }
 
-  // 生成会话标题
+  /**
+   * 根据消息内容和功能类型智能生成会话标题。
+   * @param {Array<Object>} messages - 消息列表。
+   * @param {string} functionType - 功能类型。
+   * @returns {string} 生成的会话标题。
+   */
   generateTitle(messages, functionType) {
     // 获取第一条用户消息作为标题基础
     const firstUserMessage = messages.find(msg => msg.isUser && !msg.temp);
@@ -244,7 +271,9 @@ export class ChatHistoryManager {
     return `${functionName} - ${time}`;
   }
 
-  // 导出历史记录
+  /**
+   * 将当前用户的所有历史记录导出为JSON文件。
+   */
   exportHistories() {
     const histories = this.getAllHistories();
     const dataStr = JSON.stringify(histories, null, 2);
@@ -259,7 +288,11 @@ export class ChatHistoryManager {
     URL.revokeObjectURL(url);
   }
 
-  // 导入历史记录
+  /**
+   * 从JSON文件导入历史记录，并与现有记录合并。
+   * @param {File} file - 用户选择的JSON文件。
+   * @returns {Promise<number>} 成功时，Promise解析为合并后的总历史记录数。
+   */
   importHistories(file) {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
@@ -302,10 +335,11 @@ let currentChatHistoryManager = null;
 let currentUserId = null;
 
 /**
- * 获取或创建聊天记录管理器实例
+ * 获取或创建聊天记录管理器实例。
+ * 采用单例模式，确保每个用户ID只对应一个管理器实例。
  * 
- * @param {string|null} userId - 用户ID
- * @returns {ChatHistoryManager} 聊天记录管理器实例
+ * @param {string|null} [userId=null] - 用户ID。
+ * @returns {ChatHistoryManager} 聊天记录管理器实例。
  */
 export const getChatHistoryManager = (userId = null) => {
   // 如果用户ID发生变化，或者还没有实例，就创建新的
@@ -318,7 +352,8 @@ export const getChatHistoryManager = (userId = null) => {
 };
 
 /**
- * 清理当前聊天记录管理器（用户切换时调用）
+ * 清理当前的聊天记录管理器实例。
+ * 通常在用户登出或切换账户时调用。
  */
 export const clearChatHistoryManager = () => {
   currentChatHistoryManager = null;
@@ -326,26 +361,53 @@ export const clearChatHistoryManager = () => {
   console.log('🧹 已清理聊天记录管理器');
 };
 
-// 为了向后兼容，保留全局实例（游客模式）
+/**
+ * @deprecated 为了向后兼容，保留全局实例（游客模式）。推荐使用 getChatHistoryManager()。
+ */
 export const chatHistoryManager = getChatHistoryManager();
 
 // ========================= 便捷函数 =========================
 
+/**
+ * 便捷函数：保存一条聊天记录。
+ * @param {Array<Object>} messages - 消息列表。
+ * @param {string} functionType - 功能类型。
+ * @param {string|null} title - 会话标题。
+ * @param {string|null} [userId=null] - 用户ID。
+ * @returns {string|null} 保存成功返回会话ID，否则返回null。
+ */
 export const saveChatHistory = (messages, functionType, title, userId = null) => {
   const manager = getChatHistoryManager(userId);
   return manager.saveChat(messages, functionType, title);
 };
 
+/**
+ * 便捷函数：通过ID加载一条聊天记录。
+ * @param {string} chatId - 会话ID。
+ * @param {string|null} [userId=null] - 用户ID。
+ * @returns {Object|null} 找到的会话对象，否则返回null。
+ */
 export const loadChatHistory = (chatId, userId = null) => {
   const manager = getChatHistoryManager(userId);
   return manager.getChatById(chatId);
 };
 
+/**
+ * 便捷函数：获取当前用户的所有聊天记录。
+ * @param {string|null} [userId=null] - 用户ID。
+ * @returns {Array<Object>} 聊天历史记录数组。
+ */
 export const getAllChatHistories = (userId = null) => {
   const manager = getChatHistoryManager(userId);
   return manager.getAllHistories();
 };
 
+/**
+ * 便捷函数：通过ID删除一条聊天记录。
+ * @param {string} chatId - 会话ID。
+ * @param {string|null} [userId=null] - 用户ID。
+ * @returns {boolean} 删除成功返回true，否则返回false。
+ */
 export const deleteChatHistory = (chatId, userId = null) => {
   const manager = getChatHistoryManager(userId);
   return manager.deleteChat(chatId);

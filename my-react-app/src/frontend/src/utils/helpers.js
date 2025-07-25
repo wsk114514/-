@@ -1,16 +1,21 @@
 /**
  * helpers.js - 通用工具函数集合
  * 
- * 负责提供项目中常用的工具函数，如时间格式化、数据处理等
+ * 提供项目中可重用的、与特定业务逻辑无关的辅助函数。
+ * 包括但不限于：
+ * - 时间格式化
+ * - 唯一ID生成
+ * - 数据处理（深拷贝、防抖、节流）
+ * - 文件处理（大小格式化、类型验证）
+ * - 安全性与错误处理
+ * - DOM与浏览器交互（剪贴板、设备检测）
  */
 
-// 常用工具函数集合
-
 /**
- * 格式化时间
- * @param {Date|string|number} date - 日期
- * @param {string} format - 格式 ('datetime', 'date', 'time')
- * @returns {string} 格式化后的时间字符串
+ * 格式化日期对象或时间戳为可读字符串。
+ * @param {Date|string|number} date - 需要格式化的日期对象、ISO字符串或时间戳。
+ * @param {string} [format='datetime'] - 格式化类型。可选值为 'datetime', 'date', 'time'。
+ * @returns {string} 格式化后的日期时间字符串。如果输入无效，则返回 '无效日期'。
  */
 export function formatTime(date, format = 'datetime') {
   const d = new Date(date);
@@ -43,18 +48,18 @@ export function formatTime(date, format = 'datetime') {
 }
 
 /**
- * 生成唯一ID
- * @param {string} prefix - 前缀
- * @returns {string} 唯一ID
+ * 生成一个基于前缀、时间戳和随机数的唯一标识符。
+ * @param {string} [prefix='id'] - ID的前缀。
+ * @returns {string} 生成的唯一ID，格式如 'prefix-timestamp-random'。
  */
 export function generateId(prefix = 'id') {
   return `${prefix}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 }
 
 /**
- * 深拷贝对象
- * @param {any} obj - 要拷贝的对象
- * @returns {any} 拷贝后的对象
+ * 深拷贝一个对象或数组，处理了基本类型、Date对象和嵌套结构。
+ * @param {any} obj - 需要深拷贝的源对象。
+ * @returns {any} 完全独立的深拷贝副本。
  */
 export function deepClone(obj) {
   if (obj === null || typeof obj !== 'object') {
@@ -81,11 +86,11 @@ export function deepClone(obj) {
 }
 
 /**
- * 防抖函数
- * @param {Function} func - 要防抖的函数
- * @param {number} wait - 等待时间
- * @param {boolean} immediate - 是否立即执行
- * @returns {Function} 防抖后的函数
+ * 创建一个防抖函数，延迟执行以避免函数被频繁调用。
+ * @param {Function} func - 需要进行防抖处理的函数。
+ * @param {number} wait - 延迟执行的毫秒数。
+ * @param {boolean} [immediate=false] - 是否在延迟开始前立即执行一次。
+ * @returns {Function} 返回一个具有防抖功能的新函数。
  */
 export function debounce(func, wait, immediate = false) {
   let timeout;
@@ -105,10 +110,10 @@ export function debounce(func, wait, immediate = false) {
 }
 
 /**
- * 节流函数
- * @param {Function} func - 要节流的函数
- * @param {number} limit - 限制间隔
- * @returns {Function} 节流后的函数
+ * 创建一个节流函数，在指定的时间间隔内最多执行一次。
+ * @param {Function} func - 需要进行节流处理的函数。
+ * @param {number} limit - 两次执行之间的最小时间间隔（毫秒）。
+ * @returns {Function} 返回一个具有节流功能的新函数。
  */
 export function throttle(func, limit) {
   let inThrottle;
@@ -123,9 +128,10 @@ export function throttle(func, limit) {
 }
 
 /**
- * 检查是否为空值
- * @param {any} value - 要检查的值
- * @returns {boolean} 是否为空
+ * 检查一个值是否为空。
+ * 空值定义为：null, undefined, 空数组, 空字符串, 或没有可枚举属性的空对象。
+ * @param {any} value - 需要检查的值。
+ * @returns {boolean} 如果值为空则返回 true，否则返回 false。
  */
 export function isEmpty(value) {
   if (value == null) return true;
@@ -135,10 +141,10 @@ export function isEmpty(value) {
 }
 
 /**
- * 格式化文件大小
- * @param {number} bytes - 字节数
- * @param {number} decimals - 小数位数
- * @returns {string} 格式化后的文件大小
+ * 将文件大小（字节）格式化为更易读的单位（KB, MB, GB等）。
+ * @param {number} bytes - 文件大小的字节数。
+ * @param {number} [decimals=2] - 保留的小数位数。
+ * @returns {string} 格式化后的文件大小字符串，例如 "1.23 MB"。
  */
 export function formatFileSize(bytes, decimals = 2) {
   if (bytes === 0) return '0 Bytes';
@@ -153,10 +159,10 @@ export function formatFileSize(bytes, decimals = 2) {
 }
 
 /**
- * 检查文件类型
- * @param {string} fileName - 文件名
- * @param {string[]} allowedTypes - 允许的类型
- * @returns {boolean} 是否为允许的类型
+ * 验证文件名后缀是否在允许的类型列表中。
+ * @param {string} fileName - 包含扩展名的完整文件名。
+ * @param {string[]} allowedTypes - 允许的文件扩展名数组（例如 ['pdf', 'txt']）。
+ * @returns {boolean} 如果文件类型有效则返回 true，否则返回 false。
  */
 export function isValidFileType(fileName, allowedTypes) {
   if (!fileName || !allowedTypes?.length) return false;
@@ -166,10 +172,10 @@ export function isValidFileType(fileName, allowedTypes) {
 }
 
 /**
- * 安全的JSON解析
- * @param {string} jsonString - JSON字符串
- * @param {any} defaultValue - 默认值
- * @returns {any} 解析结果
+ * 安全地解析JSON字符串，如果解析失败则返回一个默认值。
+ * @param {string} jsonString - 需要解析的JSON字符串。
+ * @param {any} [defaultValue=null] - 解析失败时返回的默认值。
+ * @returns {any} 解析后的JavaScript对象，或在失败时返回默认值。
  */
 export function safeJsonParse(jsonString, defaultValue = null) {
   try {
@@ -181,9 +187,9 @@ export function safeJsonParse(jsonString, defaultValue = null) {
 }
 
 /**
- * 获取错误消息
- * @param {Error|string|any} error - 错误对象
- * @returns {string} 错误消息
+ * 从各种可能的错误对象中提取一条可读的错误消息。
+ * @param {Error|string|any} error - 错误对象、字符串或其他类型。
+ * @returns {string} 提取出的错误消息字符串。
  */
 export function getErrorMessage(error) {
   if (typeof error === 'string') {
@@ -202,9 +208,9 @@ export function getErrorMessage(error) {
 }
 
 /**
- * 复制文本到剪贴板
- * @param {string} text - 要复制的文本
- * @returns {Promise<boolean>} 是否成功
+ * 异步将文本复制到用户的剪贴板，优先使用现代API。
+ * @param {string} text - 需要复制到剪贴板的文本。
+ * @returns {Promise<boolean>} 如果复制成功，Promise解析为 true，否则为 false。
  */
 export async function copyToClipboard(text) {
   try {
@@ -233,27 +239,27 @@ export async function copyToClipboard(text) {
 }
 
 /**
- * 检查是否为移动设备
- * @returns {boolean} 是否为移动设备
+ * 通过检查用户代理字符串来判断当前设备是否为移动设备。
+ * @returns {boolean} 如果是移动设备则返回 true，否则返回 false。
  */
 export function isMobileDevice() {
   return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
 }
 
 /**
- * 生成随机颜色
- * @returns {string} 十六进制颜色值
+ * 生成一个随机的十六进制颜色代码。
+ * @returns {string} 一个随机的CSS颜色值，例如 '#a3b4c5'。
  */
 export function generateRandomColor() {
   return '#' + Math.floor(Math.random() * 16777215).toString(16);
 }
 
 /**
- * 字符串截断
- * @param {string} str - 字符串
- * @param {number} length - 最大长度
- * @param {string} suffix - 后缀
- * @returns {string} 截断后的字符串
+ * 如果字符串超过指定长度，则截断并在末尾添加后缀。
+ * @param {string} str - 需要截断的原始字符串。
+ * @param {number} [length=100] - 允许的最大长度。
+ * @param {string} [suffix='...'] - 截断后附加的后缀。
+ * @returns {string} 处理后的字符串。
  */
 export function truncateString(str, length = 100, suffix = '...') {
   if (!str || str.length <= length) return str;
