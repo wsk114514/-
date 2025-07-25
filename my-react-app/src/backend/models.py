@@ -35,6 +35,7 @@ class ChatRequest(BaseModel):
     - 指定的功能类型（游戏推荐、攻略等）
     - 用户身份标识
     - 对话历史上下文（用于维持对话记忆）
+    - 游戏收藏数据（用于个性化推荐）
     
     用途：
     - /app 和 /app/stream 端点的请求体
@@ -45,6 +46,7 @@ class ChatRequest(BaseModel):
     function: str                          # 功能类型：general/play/game_guide/doc_qa/game_wiki
     user_id: Optional[str] = "default"     # 用户标识符，用于多用户支持
     chat_history: Optional[List[dict]] = []  # 对话历史，格式：[{"role": "user/assistant", "content": "..."}]
+    game_collection: Optional[List[dict]] = []  # 用户游戏收藏数据，用于个性化AI回答
 
 class ChatResponse(BaseModel):
     """

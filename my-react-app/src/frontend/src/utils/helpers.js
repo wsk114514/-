@@ -265,3 +265,125 @@ export function truncateString(str, length = 100, suffix = '...') {
   if (!str || str.length <= length) return str;
   return str.substring(0, length) + suffix;
 }
+
+/**
+ * 处理游戏收藏数据，提取关键信息用于AI参考
+ * @param {Array} gameCollection - 用户的游戏收藏列表
+ * @param {number} [maxGames=10] - 最多提取的游戏数量，避免上下文过长
+ * @returns {Object} 处理后的收藏数据摘要
+ */
+export function processGameCollectionForAI(gameCollection, maxGames = 10) {
+  if (!Array.isArray(gameCollection) || gameCollection.length === 0) {
+    return {
+      summary: "用户暂无游戏收藏",
+      totalCount: 0,
+      topGenres: [],
+      recentGames: [],
+      preferences: {}
+    };
+  }
+
+  // 限制游戏数量，防止上下文过长
+  const limitedGames = gameCollection.slice(0, maxGames);
+  
+  // 统计游戏类型偏好
+  const genreCount = {};
+  const platformCount = {};
+  const recentGames = [];
+  
+  limitedGames.forEach(game => {
+    // 统计游戏类型
+    if (game.genres && Array.isArray(game.genres)) {
+      game.genres.forEach(genre => {
+        genreCount[genre] = (genreCount[genre] || 0) + 1;
+      });
+    }
+    
+    // 统计平台偏好
+    if (game.platform) {
+      platformCount[game.platform] = (platformCount[game.platform] || 0) + 1;
+    }
+    
+    // 收集最近添加的游戏
+    recentGames.push({
+      name: game.name,
+      genres: game.genres || [],
+      platform: game.platform || '未知',
+      rating: game.rating || 0,
+      playStatus: game.playStatus || '未知',
+      notes: game.notes || ''
+    });
+  });
+
+  // 获取热门类型（按频次排序）
+  const topGenres = Object.entries(genreCount)
+    .sort(([,a], [,b]) => b - a)
+    .slice(0, 5)
+    .map(([genre, count]) => ({ genre, count }));
+
+  // 获取热门平台
+  const topPlatforms = Object.entries(platformCount)
+    .sort(([,a], [,b]) => b - a)
+    .slice(0, 3)
+    .map(([platform, count]) => ({ platform, count }));
+
+  return {
+    summary: `用户收藏了${gameCollection.length}款游戏，主要偏好${topGenres[0]?.genre || '未知'}类型游戏`,
+    totalCount: gameCollection.length,
+    topGenres,
+    topPlatforms,
+    recentGames,
+    preferences: {
+      favoriteGenres: topGenres.map(g => g.genre),
+      favoritePlatforms: topPlatforms.map(p => p.platform)
+    }
+  };
+}
+
+/**
+ * 生成基于游戏收藏的上下文提示，供AI参考
+ * @param {Array} gameCollection - 用户的游戏收藏列表
+ * @param {string} functionType - 当前功能类型
+ * @returns {string} 格式化的上下文提示
+ */
+export function generateGameCollectionContext(gameCollection, functionType) {
+  const processed = processGameCollectionForAI(gameCollection);
+  
+  if (processed.totalCount === 0) {
+    return '';
+  }
+
+  let context = `\n\n[用户游戏收藏参考信息]\n`;
+  context += `- 收藏总数: ${processed.totalCount}款游戏\n`;
+  
+  if (processed.topGenres.length > 0) {
+    context += `- 偏好类型: ${processed.topGenres.map(g => `${g.genre}(${g.count}款)`).join(', ')}\n`;
+  }
+  
+  if (processed.topPlatforms.length > 0) {
+    context += `- 常用平台: ${processed.topPlatforms.map(p => `${p.platform}(${p.count}款)`).join(', ')}\n`;
+  }
+
+  if (processed.recentGames.length > 0) {
+    context += `- 最近收藏: ${processed.recentGames.slice(0, 5).map(g => 
+      `${g.name}(${g.genres.join('/')}, ${g.platform})`
+    ).join(', ')}\n`;
+  }
+
+  // 根据功能类型添加特定的上下文建议
+  switch (functionType) {
+    case 'play':
+      context += `\n请基于用户的收藏偏好提供个性化的游戏推荐。`;
+      break;
+    case 'game_guide':
+      context += `\n如果用户询问的是已收藏游戏的攻略，请优先提供相关建议。`;
+      break;
+    case 'game_wiki':
+      context += `\n可以结合用户收藏的游戏类型，提供相关的游戏知识。`;
+      break;
+    default:
+      context += `\n请结合用户的游戏偏好提供更个性化的回答。`;
+  }
+
+  return context;
+}

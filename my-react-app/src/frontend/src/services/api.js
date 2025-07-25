@@ -163,10 +163,11 @@ async function fetchWithRetry(url, options = {}, maxAttempts = API_CONFIG.RETRY_
  * @param {string} function_type - 对话所属的功能类型。
  * @param {string} [user_id='default'] - 用户的唯一标识符。
  * @param {Array<Object>} [chat_history=[]] - 当前的聊天历史记录。
+ * @param {Array<Object>} [game_collection=[]] - 用户的游戏收藏数据。
  * @returns {Promise<string>} AI的回复内容。
  * @throws {APIError} 如果请求失败，则抛出此错误。
  */
-export async function getResponse(message, function_type, user_id = 'default', chat_history = []) {
+export async function getResponse(message, function_type, user_id = 'default', chat_history = [], game_collection = []) {
   try {
     const response = await fetchWithRetry('/app', {
       method: 'POST',
@@ -177,7 +178,8 @@ export async function getResponse(message, function_type, user_id = 'default', c
         message: message,
         function: function_type,
         user_id: user_id,
-        chat_history: chat_history
+        chat_history: chat_history,
+        game_collection: game_collection
       }),
     });
 
@@ -201,10 +203,11 @@ export async function getResponse(message, function_type, user_id = 'default', c
  * @param {AbortController|null} [abortController=null] - 用于中断请求的 AbortController。
  * @param {string} [user_id='default'] - 用户的唯一标识符。
  * @param {Array<Object>} [chat_history=[]] - 当前的聊天历史记录。
+ * @param {Array<Object>} [game_collection=[]] - 用户的游戏收藏数据。
  * @returns {Promise<void>} 当流结束时，Promise 完成。
  * @throws {APIError} 如果请求失败或 onChunk 回调未提供，则抛出此错误。
  */
-export async function getResponseStream(message, function_type, onChunk, abortController = null, user_id = 'default', chat_history = []) {
+export async function getResponseStream(message, function_type, onChunk, abortController = null, user_id = 'default', chat_history = [], game_collection = []) {
   if (!onChunk || typeof onChunk !== 'function') {
     throw new APIError('onChunk 回调函数是必需的', 0);
   }
@@ -214,11 +217,13 @@ export async function getResponseStream(message, function_type, onChunk, abortCo
       message: message,
       function: function_type,
       user_id: user_id,
-      chat_history: chat_history
+      chat_history: chat_history,
+      game_collection: game_collection
     };
     
     console.log('API发送的请求体:', requestBody);
     console.log('API发送的chat_history长度:', chat_history.length);
+    console.log('API发送的game_collection长度:', game_collection.length);
     
     const fetchOptions = {
       method: 'POST',

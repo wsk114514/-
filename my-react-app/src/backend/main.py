@@ -268,12 +268,13 @@ async def chat_endpoint(req: ChatRequest):
         logger.info(f"=== 标准聊天请求 | 用户ID: {req.user_id} | 功能: {req.function} ===")
         logger.info(f"消息: {req.message}")
         logger.info(f"历史记录条数: {len(req.chat_history) if req.chat_history else 0}")
+        logger.info(f"游戏收藏条数: {len(req.game_collection) if req.game_collection else 0}")
         
         # 获取功能特定的LLM系统
         system = get_llm_system(req.function)
         
         # 调用核心逻辑获取回复
-        response = get_response(message, system, req.function, req.user_id, req.chat_history)
+        response = get_response(req.message, system, req.function, req.user_id, req.chat_history, req.game_collection)
         
         return ChatResponse(response=response)
         
@@ -317,6 +318,9 @@ async def chat_stream_endpoint(req: ChatRequest):
             )
         
         logger.info(f"=== 流式聊天请求 | 用户ID: {req.user_id} | 功能: {req.function} ===")
+        logger.info(f"消息: {req.message}")
+        logger.info(f"历史记录条数: {len(req.chat_history) if req.chat_history else 0}")
+        logger.info(f"游戏收藏条数: {len(req.game_collection) if req.game_collection else 0}")
         
         # 获取功能特定的LLM系统
         system = get_llm_system(req.function)
@@ -330,7 +334,7 @@ async def chat_stream_endpoint(req: ChatRequest):
             """
             try:
                 # 迭代从核心逻辑获取的流式响应块
-                async for chunk in get_response_stream(message, system, req.function, req.user_id, req.chat_history):
+                async for chunk in get_response_stream(req.message, system, req.function, req.user_id, req.chat_history, req.game_collection):
                     # 将每个块格式化为SSE `data` 字段
                     yield f"data: {json.dumps({'content': chunk}, ensure_ascii=False)}\n\n"
                 

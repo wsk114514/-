@@ -19,6 +19,8 @@
 import React, { createContext, useState, useContext, useEffect, useCallback, useRef } from 'react';
 import { getResponseStream } from '../services/api';
 import { onUserSwitch } from '../utils/userSwitchEvents';
+import { getGameCollectionManager } from '../utils/gameCollection';
+import { generateGameCollectionContext } from '../utils/helpers';
 
 // 创建功能状态Context
 const FunctionContext = createContext();
@@ -373,6 +375,11 @@ export const FunctionProvider = ({ children }) => {
         content: msg.content
       }));
       
+      // 获取用户游戏收藏数据
+      const userId = 'default'; // 这里可以根据实际需要获取用户ID
+      const gameCollectionManager = getGameCollectionManager(userId);
+      const game_collection = gameCollectionManager.getCollection();
+      
       let newResponse = '';
       await getResponseStream(randomPrompt, currentFunctionType, (chunk) => {
         newResponse += chunk;
@@ -385,7 +392,7 @@ export const FunctionProvider = ({ children }) => {
               : msg
           )
         }));
-      }, abortControllerRef.current, 'default', chat_history);
+      }, abortControllerRef.current, userId, chat_history, game_collection);
       
     } catch (error) {
       console.error('重新生成消息失败:', error);

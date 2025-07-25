@@ -9,6 +9,8 @@ import { useFunctionContext } from '../context/FunctionContext';
 import { getResponseStream } from '../services/api';
 import { getCurrentUserId } from '../utils/userSession';
 import { useSearchParams } from 'react-router-dom';
+import { getGameCollectionManager } from '../utils/gameCollection';
+import { useAuth } from '../context/AuthContext';
 
 // ========================= 工具函数 =========================
 
@@ -32,6 +34,35 @@ const InputBar = () => {
   
   // URL参数获取：用于接收预设问题
   const [searchParams, setSearchParams] = useSearchParams();
+  
+  // 获取用户认证信息
+  const { user } = useAuth();
+  
+  // 获取用户ID（用于游戏收藏）
+  const getUserIdForGameCollection = useCallback(() => {
+    // 首先尝试从AuthContext获取用户名
+    if (user?.username) {
+      return user.username;
+    }
+    
+    // 如果AuthContext中没有用户信息，尝试从localStorage获取
+    try {
+      const storedUser = localStorage.getItem('user_data');
+      if (storedUser) {
+        const userData = JSON.parse(storedUser);
+        if (userData?.username) {
+          console.warn('⚠️ 从localStorage获取用户ID:', userData.username);
+          return userData.username;
+        }
+      }
+    } catch (error) {
+      console.error('获取localStorage用户数据失败:', error);
+    }
+    
+    // 最后的fallback
+    console.warn('⚠️ 无法获取用户ID，使用null');
+    return null;
+  }, [user?.username]);
   
   const { 
     currentFunctionType, 
@@ -107,7 +138,14 @@ const InputBar = () => {
         content: msg.content
       }));
       
+      // 获取用户游戏收藏数据
+      const userId = getCurrentUserId(); // 用于API请求的会话ID
+      const gameCollectionUserId = getUserIdForGameCollection(); // 用于游戏收藏的用户ID
+      const gameCollectionManager = getGameCollectionManager(gameCollectionUserId);
+      const game_collection = gameCollectionManager.getCollection();
+      
       console.log('预设消息发送时的聊天历史:', chat_history);
+      console.log('预设消息发送时的游戏收藏:', game_collection.length);
       
       // 创建新的 AbortController
       abortControllerRef.current = new AbortController();
@@ -121,7 +159,7 @@ const InputBar = () => {
             ? { ...msg, content: aiResponse } 
             : msg
         ));
-      }, abortControllerRef.current, getCurrentUserId(), chat_history);
+      }, abortControllerRef.current, userId, chat_history, game_collection);
       
     } catch (error) {
       console.error('发送预设消息失败:', error);
@@ -243,13 +281,27 @@ const InputBar = () => {
         content: msg.content
       }));
       
+      // 获取用户游戏收藏数据
+      const userId = getCurrentUserId(); // 用于API请求的会话ID
+      const gameCollectionUserId = getUserIdForGameCollection(); // 用于游戏收藏的用户ID  
+      const gameCollectionManager = getGameCollectionManager(gameCollectionUserId);
+      const game_collection = gameCollectionManager.getCollection();
+      
       console.log(`普通消息发送时的messages长度: ${messages.length}`);
       console.log(`发送的chat_history:`, chat_history);
+      console.log(`用户会话ID: ${userId}, 游戏收藏用户ID: ${gameCollectionUserId}`);
+      console.log(`用户认证状态:`, user);
+      console.log(`用户名: ${user?.username}, 是否已认证: ${user ? 'true' : 'false'}`);
+      console.log(`localStorage游戏收藏键:`, gameCollectionUserId ? `game_collection_${gameCollectionUserId}` : 'game_collection_guest');
+      console.log(`localStorage中的游戏收藏数据:`, localStorage.getItem(gameCollectionUserId ? `game_collection_${gameCollectionUserId}` : 'game_collection_guest'));
+      console.log(`发送的game_collection长度: ${game_collection.length}`);
+      console.log(`game_collection详细数据:`, game_collection);
       console.log(`即将发送的完整请求数据:`, {
         message: message,
         function: currentFunctionType,
-        user_id: getCurrentUserId(),
-        chat_history: chat_history
+        user_id: userId,
+        chat_history: chat_history,
+        game_collection: game_collection
       });
       
       // 创建新的 AbortController
@@ -264,7 +316,7 @@ const InputBar = () => {
             ? { ...msg, content: aiResponse } 
             : msg
         ));
-      }, abortControllerRef.current, getCurrentUserId(), chat_history);
+      }, abortControllerRef.current, userId, chat_history, game_collection);
       
     } catch (error) {
       console.error('发送消息失败:', error);

@@ -94,6 +94,107 @@ def init_memory():
         memory_key="chat_history"  # 记忆在prompt中的键名
     )
 
+# ========================= 游戏收藏数据处理 =========================
+
+def process_game_collection_for_ai(game_collection: list, max_games: int = 10) -> str:
+    """
+    处理游戏收藏数据，生成AI可理解的上下文信息
+    
+    Args:
+        game_collection (list): 用户的游戏收藏列表
+        max_games (int): 最多处理的游戏数量，避免上下文过长
+        
+    Returns:
+        str: 格式化的游戏收藏上下文信息
+    """
+    if not game_collection or len(game_collection) == 0:
+        return ""
+    
+    # 限制游戏数量，防止上下文过长
+    limited_games = game_collection[:max_games]
+    
+    # 统计游戏类型偏好
+    genre_count = {}
+    platform_count = {}
+    recent_games = []
+    
+    for game in limited_games:
+        # 统计游戏类型
+        if game.get('genres') and isinstance(game['genres'], list):
+            for genre in game['genres']:
+                genre_count[genre] = genre_count.get(genre, 0) + 1
+        
+        # 统计平台偏好
+        if game.get('platform'):
+            platform = game['platform']
+            platform_count[platform] = platform_count.get(platform, 0) + 1
+        
+        # 收集游戏信息
+        recent_games.append({
+            'name': game.get('name', '未知游戏'),
+            'genres': game.get('genres', []),
+            'platform': game.get('platform', '未知平台'),
+            'rating': game.get('rating', 0),
+            'playStatus': game.get('playStatus', '未知'),
+            'notes': game.get('notes', '')
+        })
+    
+    # 获取热门类型（按频次排序）
+    top_genres = sorted(genre_count.items(), key=lambda x: x[1], reverse=True)[:5]
+    top_platforms = sorted(platform_count.items(), key=lambda x: x[1], reverse=True)[:3]
+    
+    # 构建上下文信息
+    context = f"\n[用户游戏收藏参考信息]\n"
+    context += f"- 收藏总数: {len(game_collection)}款游戏\n"
+    
+    if top_genres:
+        genre_str = ', '.join([f"{genre}({count}款)" for genre, count in top_genres])
+        context += f"- 偏好类型: {genre_str}\n"
+    
+    if top_platforms:
+        platform_str = ', '.join([f"{platform}({count}款)" for platform, count in top_platforms])
+        context += f"- 常用平台: {platform_str}\n"
+    
+    if recent_games:
+        game_str = ', '.join([
+            f"{game['name']}({'/'.join(game['genres']) if game['genres'] else '未知类型'}, {game['platform']})"
+            for game in recent_games[:5]
+        ])
+        context += f"- 最近收藏: {game_str}\n"
+    
+    return context
+
+def generate_game_collection_context(game_collection: list, function_type: str) -> str:
+    """
+    根据功能类型生成针对性的游戏收藏上下文提示
+    
+    Args:
+        game_collection (list): 用户的游戏收藏列表
+        function_type (str): 当前功能类型
+        
+    Returns:
+        str: 格式化的上下文提示
+    """
+    if not game_collection:
+        return ""
+    
+    context = process_game_collection_for_ai(game_collection)
+    
+    if not context:
+        return ""
+    
+    # 根据功能类型添加特定的上下文建议
+    if function_type == 'play':
+        context += "\n请基于用户的收藏偏好提供个性化的游戏推荐，考虑用户已收藏的游戏类型和平台偏好。"
+    elif function_type == 'game_guide':
+        context += "\n如果用户询问的是已收藏游戏的攻略，请优先提供相关建议和技巧。"
+    elif function_type == 'game_wiki':
+        context += "\n可以结合用户收藏的游戏类型，提供相关的游戏知识和背景信息。"
+    else:
+        context += "\n请结合用户的游戏偏好提供更个性化和相关的回答。"
+    
+    return context
+
 # ========================= 记忆管理系统 =========================
 
 # 全局记忆存储 - 按用户ID和功能类型分别存储
@@ -441,7 +542,7 @@ def clear_memory(system, function_type=None, user_id=None):
     except Exception as e:
         logger.error(f"清除记忆失败: {str(e)}")
 
-def get_response(message: str, system: dict, function: str, user_id: str = "default", chat_history: list = None) -> str:
+def get_response(message: str, system: dict, function: str, user_id: str = "default", chat_history: list = None, game_collection: list = None) -> str:
     """
     获取LLM响应 (LCEL版本) - 同步非流式版本。
 
@@ -449,12 +550,13 @@ def get_response(message: str, system: dict, function: str, user_id: str = "defa
     它根据功能类型（`function`）动态地选择和执行适当的LCEL链。
 
     主要流程：
-    1.  接收用户消息、系统配置、功能类型、用户ID和对话历史。
+    1.  接收用户消息、系统配置、功能类型、用户ID、对话历史和游戏收藏数据。
     2.  将前端传入的 `chat_history` (JSON列表) 格式化为LLM可读的纯文本。
-    3.  如果功能是 'doc_qa'，则初始化并调用文档问答链。
-    4.  对于其他功能，构建一个通用的对话链，注入相应的角色描述和格式化后的历史记录。
-    5.  同步调用（`.invoke()`）选择的链并获取完整的响应。
-    6.  返回处理后的字符串结果。
+    3.  处理游戏收藏数据，生成个性化上下文信息。
+    4.  如果功能是 'doc_qa'，则初始化并调用文档问答链。
+    5.  对于其他功能，构建一个通用的对话链，注入相应的角色描述和格式化后的历史记录。
+    6.  同步调用（`.invoke()`）选择的链并获取完整的响应。
+    7.  返回处理后的字符串结果。
 
     Args:
         message (str): 用户的输入消息。
@@ -462,6 +564,7 @@ def get_response(message: str, system: dict, function: str, user_id: str = "defa
         function (str): 当前的功能类型 (e.g., 'doc_qa', 'general')。
         user_id (str, optional): 用户的唯一标识符。默认为 "default"。
         chat_history (list, optional): 对话历史列表，格式为 [{"role": "user/assistant", "content": "..."}]。
+        game_collection (list, optional): 用户游戏收藏数据，用于个性化回答。
     
     Returns:
         str: 模型生成的完整回复文本。
@@ -474,8 +577,13 @@ def get_response(message: str, system: dict, function: str, user_id: str = "defa
         if chat_history is None:
             chat_history = []
         
+        # 使用传入的game_collection，如果没有则使用空列表
+        if game_collection is None:
+            game_collection = []
+        
         # 记录调试信息
         logger.info(f"get_response收到chat_history长度: {len(chat_history)}")
+        logger.info(f"get_response收到game_collection长度: {len(game_collection)}")
         
         # 将chat_history转换为字符串格式
         history_text = ""
@@ -484,16 +592,27 @@ def get_response(message: str, system: dict, function: str, user_id: str = "defa
             content = msg.get("content", "")
             history_text += f"{role}: {content}\n"
         
+        # 生成游戏收藏上下文
+        game_context = generate_game_collection_context(game_collection, function)
+        
         logger.info(f"转换后的历史文本长度: {len(history_text)}")
+        logger.info(f"游戏收藏上下文长度: {len(game_context)}")
         if history_text:
             logger.info(f"历史文本预览: {history_text[:200]}...")
+        if game_context:
+            logger.info(f"游戏收藏上下文预览: {game_context[:200]}...")
         
         # 文档问答功能
         if function == "doc_qa":
             doc_qa_chain = init_doc_qa_system(system["llm"], user_id)
             try:
+                # 在文档问答中也可以包含游戏收藏上下文
+                enhanced_question = message
+                if game_context:
+                    enhanced_question = f"{message}{game_context}"
+                
                 result = doc_qa_chain.invoke({
-                    "question": message,
+                    "question": enhanced_question,
                     "chat_history": history_text
                 })
                 return result
@@ -530,6 +649,7 @@ def get_response(message: str, system: dict, function: str, user_id: str = "defa
         
         当前对话历史：
         {chat_history}
+        {game_context}
         
         人类: {input}
         AI助手:"""
@@ -546,6 +666,7 @@ def get_response(message: str, system: dict, function: str, user_id: str = "defa
                     )
                 ),
                 "chat_history": RunnableLambda(lambda x: history_text),
+                "game_context": RunnableLambda(lambda x: game_context),
                 "input": itemgetter("input")
             }
             | prompt
@@ -560,7 +681,7 @@ def get_response(message: str, system: dict, function: str, user_id: str = "defa
         logger.error(f"获取响应失败: {str(e)}")
         return "系统处理请求时出错，请稍后再试"
 
-async def get_response_stream(message: str, system: dict, function: str, user_id: str = "default", chat_history: list = None):
+async def get_response_stream(message: str, system: dict, function: str, user_id: str = "default", chat_history: list = None, game_collection: list = None):
     """
     以流式方式获取LLM的响应 (LCEL版本) - 异步流式版本。
 
@@ -568,7 +689,7 @@ async def get_response_stream(message: str, system: dict, function: str, user_id
     它与 `get_response` 类似，但使用异步方法（`.astream()`）来逐块生成响应。
 
     主要流程：
-    1.  与 `get_response` 同样地准备输入和历史记录。
+    1.  与 `get_response` 同样地准备输入、历史记录和游戏收藏数据。
     2.  如果功能是 'doc_qa'，初始化文档问答链并异步迭代其流式输出（`.astream()`）。
     3.  对于其他功能，构建通用的对话链。
     4.  异步迭代通用对话链的流式输出。
@@ -594,6 +715,14 @@ async def get_response_stream(message: str, system: dict, function: str, user_id
         if chat_history is None:
             chat_history = []
         
+        # 使用传入的game_collection，如果没有则使用空列表
+        if game_collection is None:
+            game_collection = []
+        
+        # 记录调试信息
+        logger.info(f"get_response_stream收到chat_history长度: {len(chat_history)}")
+        logger.info(f"get_response_stream收到game_collection长度: {len(game_collection)}")
+        
         # 将chat_history转换为字符串格式
         history_text = ""
         for msg in chat_history[-10:]:  # 只使用最近10条记录，避免token过多
@@ -601,14 +730,25 @@ async def get_response_stream(message: str, system: dict, function: str, user_id
             content = msg.get("content", "")
             history_text += f"{role}: {content}\n"
         
+        # 生成游戏收藏上下文
+        game_context = generate_game_collection_context(game_collection, function)
+        
+        logger.info(f"流式响应 - 历史文本长度: {len(history_text)}")
+        logger.info(f"流式响应 - 游戏收藏上下文长度: {len(game_context)}")
+        
         # 文档问答功能
         if function == "doc_qa":
             doc_qa_chain = init_doc_qa_system(system["llm"], user_id)
             try:
+                # 在文档问答中也可以包含游戏收藏上下文
+                enhanced_question = message
+                if game_context:
+                    enhanced_question = f"{message}{game_context}"
+                
                 # 使用 astream 进行流式处理
                 full_response = ""
                 async for chunk in doc_qa_chain.astream({
-                    "question": message,
+                    "question": enhanced_question,
                     "chat_history": history_text
                 }):
                     if chunk:
@@ -653,6 +793,7 @@ async def get_response_stream(message: str, system: dict, function: str, user_id
             
             当前对话历史：
             {chat_history}
+            {game_context}
             
             人类: {input}
             AI助手:"""
@@ -664,7 +805,7 @@ async def get_response_stream(message: str, system: dict, function: str, user_id
             
             prompt = ChatPromptTemplate.from_template(template)
             
-            # 使用前端传入的历史记录创建链
+            # 使用前端传入的历史记录和游戏收藏上下文创建链
             chain = (
                 {
                     "role_description": RunnableLambda(
@@ -674,6 +815,7 @@ async def get_response_stream(message: str, system: dict, function: str, user_id
                         )
                     ),
                     "chat_history": RunnableLambda(lambda x: history_text),
+                    "game_context": RunnableLambda(lambda x: game_context),
                     "input": itemgetter("input")
                 }
                 | prompt
