@@ -466,11 +466,34 @@ class GameCollectionManager {
    * @returns {string} 游戏ID
    */
   generateGameId(gameName) {
-    return gameName.toLowerCase()
-      .replace(/[^\w\s-]/g, '') // 移除特殊字符
-      .replace(/\s+/g, '-')     // 替换空格为连字符
-      .replace(/-+/g, '-')      // 合并多个连字符
-      .replace(/^-|-$/g, '');   // 移除首尾连字符
+    if (!gameName || typeof gameName !== 'string') {
+      console.warn('generateGameId: 无效的游戏名称', gameName);
+      return 'unknown-game';
+    }
+    
+    // 支持中文和其他Unicode字符的ID生成
+    const id = gameName
+      .toLowerCase()
+      .trim()
+      // 替换空格和特殊符号为连字符，但保留中文、英文、数字
+      .replace(/[\s\-_\.]+/g, '-')  // 空格、连字符、下划线、点号替换为单个连字符
+      .replace(/[^\u4e00-\u9fa5a-z0-9\-]/g, '') // 只保留中文、英文小写、数字、连字符
+      .replace(/-+/g, '-')          // 合并多个连字符
+      .replace(/^-|-$/g, '');       // 移除首尾连字符
+    
+    // 如果处理后为空，使用原始名称的hash值
+    if (!id) {
+      const hash = gameName.split('').reduce((a, b) => {
+        a = ((a << 5) - a) + b.charCodeAt(0);
+        return a & a;
+      }, 0);
+      const fallbackId = `game-${Math.abs(hash)}`;
+      console.log(`generateGameId: "${gameName}" → "${fallbackId}" (使用hash值)`);
+      return fallbackId;
+    }
+    
+    console.log(`generateGameId: "${gameName}" → "${id}"`);
+    return id;
   }
 
   /**
@@ -583,11 +606,21 @@ let currentUserId = null;
  */
 export const getGameCollectionManager = (userId = null) => {
   try {
+    // 添加详细的调试信息
+    console.log(`🔄 请求游戏收藏管理器:`);
+    console.log(`   请求的用户ID: "${userId}" (类型: ${typeof userId})`);
+    console.log(`   当前缓存的用户ID: "${currentUserId}" (类型: ${typeof currentUserId})`);
+    console.log(`   用户ID是否相等: ${currentUserId === userId}`);
+    console.log(`   是否有现有管理器: ${!!currentGameCollectionManager}`);
+    
     // 如果用户ID发生变化，或者还没有实例，就创建新的
     if (!currentGameCollectionManager || currentUserId !== userId) {
+      console.log(`   🆕 创建新管理器实例 (原因: ${!currentGameCollectionManager ? '无现有实例' : 'ID不匹配'})`);
       currentGameCollectionManager = new GameCollectionManager(userId);
       currentUserId = userId;
       console.log(`🔄 切换游戏收藏管理器 - 用户: ${userId || '游客'}`);
+    } else {
+      console.log(`   ♻️ 复用现有管理器实例`);
     }
     return currentGameCollectionManager;
   } catch (error) {
